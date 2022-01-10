@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+    "archive-client",
+    "archive-math",
+    "archive-wasm"
+]
+default-members = [
+    "archive-client",
+    "archive-math"
+]
+
+[profile.release]
+lto = true
+opt-level = 3
