@@ -33,12 +33,12 @@ impl App {
     }
 
     /// update is called for any WindowEvent not handled by the framework
-    fn update(&mut self, _event: winit::event::WindowEvent) {
+    fn _update(&mut self, _event: winit::event::WindowEvent) {
         //empty
     }
 
     /// resize is called on WindowEvent::Resized events
-    fn resize(
+    fn _resize(
         &mut self,
         _sc_desc: &wgpu::SurfaceConfiguration,
         _device: &wgpu::Device,

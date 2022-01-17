@@ -2,12 +2,14 @@
 resolver = "2"
 members = [
     "archive-client",
-    "archive-math",
+    "archive-engine",
+    "archive-server",
     "archive-wasm"
 ]
 default-members = [
     "archive-client",
-    "archive-math"
+    "archive-server",
+    "archive-engine"
 ]
 
 [profile.release]

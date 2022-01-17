@@ -7,6 +7,25 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug unit tests in library 'archive-client'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=archive-client"
+                ],
+                "filter": {
+                    "name": "archive-client",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug example 'native'",
             "cargo": {
                 "args": [
@@ -22,5 +41,102 @@
             "args": [],
             "cwd": "${workspaceFolder}"
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'native'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=native",
+                    "--package=archive-client"
+                ],
+                "filter": {
+                    "name": "native",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'archive-engine'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=archive-engine"
+                ],
+                "filter": {
+                    "name": "archive-engine",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'archive-server'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=archive-server",
+                    "--package=archive-server"
+                ],
+                "filter": {
+                    "name": "archive-server",
+                    "kind": "bin"
+                }
+            },
+            "args": ["./", "--listen", "[::]:4433"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "debug"
+            }
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'archive-server'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=archive-server",
+                    "--package=archive-server"
+                ],
+                "filter": {
+                    "name": "archive-server",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'archive-wasm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=archive-wasm"
+                ],
+                "filter": {
+                    "name": "archive-wasm",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
     ]
 }
