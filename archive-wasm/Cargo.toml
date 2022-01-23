@@ -10,8 +10,13 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 archive-client = { path = "../archive-client", default-features = false, features = ["webgl"] }
-wasm-bindgen = { version = "0.2.78" }
+archive-engine = { path = "../archive-engine" }
+
+wasm-bindgen = { version = "0.2.78", features = ["serde-serialize"] }
 console_log = "0.2.0"
+log = "0.4"
+serde = "1.0"
+serde_json = "1.0"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -20,7 +25,17 @@ console_log = "0.2.0"
 console_error_panic_hook = { version = "0.1.6" }
 wasm-bindgen-futures = "0.4.28"
 winit = "0.26.0"
-web-sys = { version = "0.3", features = ["Window", "HtmlCanvasElement", "WebGl2RenderingContext"
+web-sys = { version = "0.3", features = [
+    "Window",
+    "HtmlCanvasElement",
+    "WebGl2RenderingContext",
+
+    # for fetch requests
+    "Headers",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
 #    "Document",
 #    "Navigator",
 #    "Node",

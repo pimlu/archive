@@ -18,7 +18,9 @@ async function init_() {
   isInitDone = true;
 }
 export default function init() {
-  init_().then(res).catch(rej);
+  if (!isInitDone) {
+    init_().then(res).catch(rej);
+  }
   return initDone;
 }
 

@@ -19,7 +19,3 @@ image = { version = "0.23.14", default-features = false, features=["png"] }
 default = ["desktop"]
 desktop = ["wgpu/default"]
 webgl = ["wgpu/webgl"]
-
-[dev-dependencies]
-env_logger = "0.9.0"
-pollster = "0.2.4"

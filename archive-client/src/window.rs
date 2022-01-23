@@ -6,7 +6,7 @@ use winit::{
     window::Window,
 };
 
-pub async fn run(event_loop: EventLoop<()>, window: Window) {
+pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce() {
     let size = window.inner_size();
     let instance = wgpu::Instance::new(wgpu::Backends::all());
     let surface = unsafe { instance.create_surface(&window) };
@@ -49,45 +49,50 @@ pub async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let mut app = App::init(&config, &adapter, &device, &queue);
 
-    event_loop.run(move |event, _, control_flow| {
-        // Have the closure take ownership of the resources.
-        // `event_loop.run` never returns, therefore we must do this to ensure
-        // the resources are properly cleaned up.
-        let _ = (&instance, &adapter);
+    // return a FnOnce so we can "escape" wasm-bindgen-futures and run this
+    // call which currently panics later. This is because wasm-bindgen-futures
+    // doesn't support panics
+    move || {
+        event_loop.run(move |event, _, control_flow| {
+            // Have the closure take ownership of the resources.
+            // `event_loop.run` never returns, therefore we must do this to ensure
+            // the resources are properly cleaned up.
+            let _ = (&instance, &adapter);
 
-        *control_flow = ControlFlow::Poll;
-        match event {
-            Event::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
-                // Reconfigure the surface with the new size
-                config.width = size.width;
-                config.height = size.height;
-                surface.configure(&device, &config);
-            }
-            Event::RedrawRequested(_) => {
-                let frame = surface
-                    .get_current_texture()
-                    .expect("Failed to acquire next swap chain texture");
-                let view = frame
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
+            *control_flow = ControlFlow::Poll;
+            match event {
+                Event::WindowEvent {
+                    event: WindowEvent::Resized(size),
+                    ..
+                } => {
+                    // Reconfigure the surface with the new size
+                    config.width = size.width;
+                    config.height = size.height;
+                    surface.configure(&device, &config);
+                }
+                Event::RedrawRequested(_) => {
+                    let frame = surface
+                        .get_current_texture()
+                        .expect("Failed to acquire next swap chain texture");
+                    let view = frame
+                        .texture
+                        .create_view(&wgpu::TextureViewDescriptor::default());
 
-                app.render(&view, &device, &queue);
+                    app.render(&view, &device, &queue);
 
-                frame.present();
+                    frame.present();
+                }
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => *control_flow = ControlFlow::Exit,
+                Event::RedrawEventsCleared => {
+                    // RedrawRequested will only trigger once, unless we manually
+                    // request it.
+                    window.request_redraw();
+                }
+                _ => {}
             }
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            Event::RedrawEventsCleared => {
-                // RedrawRequested will only trigger once, unless we manually
-                // request it.
-                window.request_redraw();
-            }
-            _ => {}
-        }
-    });
+        })
+    }
 }

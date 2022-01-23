@@ -3,11 +3,13 @@ resolver = "2"
 members = [
     "archive-client",
     "archive-engine",
+    "archive-native",
     "archive-server",
     "archive-wasm"
 ]
 default-members = [
     "archive-client",
+    "archive-native",
     "archive-server",
     "archive-engine"
 ]

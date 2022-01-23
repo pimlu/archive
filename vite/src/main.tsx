@@ -1,5 +1,4 @@
-import React from 'react';
-import { render } from 'react-dom';
+import { render } from 'preact';
 import App from './ts/App';
 import './index.css';
 
