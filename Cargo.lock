@@ -153,6 +153,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_ecs",
  "cgmath",
+ "futures",
  "serde",
  "serde_json",
 ]
@@ -195,6 +196,8 @@ dependencies = [
  "archive-engine",
  "console_error_panic_hook",
  "console_log",
+ "futures",
+ "js-sys",
  "log",
  "serde",
  "serde_json",

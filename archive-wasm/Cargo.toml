@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 archive-client = { path = "../archive-client", default-features = false, features = ["webgl"] }
 archive-engine = { path = "../archive-engine" }
 
+futures = "0.3"
 wasm-bindgen = { version = "0.2.78", features = ["serde-serialize"] }
 console_log = "0.2.0"
 log = "0.4"
@@ -25,6 +26,7 @@ serde_json = "1.0"
 console_error_panic_hook = { version = "0.1.6" }
 wasm-bindgen-futures = "0.4.28"
 winit = "0.26.0"
+js-sys = "0.3"
 web-sys = { version = "0.3", features = [
     "Window",
     "HtmlCanvasElement",
@@ -36,6 +38,19 @@ web-sys = { version = "0.3", features = [
     "RequestInit",
     "RequestMode",
     "Response",
+
+    # for webrtc
+    "MessageEvent",
+    "RtcPeerConnection",
+    "RtcConfiguration",
+    "RtcSignalingState",
+    "RtcSdpType",
+    "RtcSessionDescriptionInit",
+    "RtcPeerConnectionIceEvent",
+    "RtcIceCandidate",
+    "RtcDataChannel",
+    "RtcDataChannelEvent",
+
 #    "Document",
 #    "Navigator",
 #    "Node",

@@ -50,7 +50,7 @@ impl App {
     pub fn render(&mut self, view: &wgpu::TextureView, device: &wgpu::Device, queue: &wgpu::Queue) {
         let (_last_frametime, fps_opt) = self.frame_counter.tick();
         if let Some(fps) = fps_opt {
-            //info!("fps: {}", fps);
+            info!("fps: {}", fps);
         }
         self.sprite_painter
             .render(view, device, queue, &self.sprite_texture);

@@ -1,6 +1,6 @@
-use anyhow::Result;
-use clap::{App, AppSettings, Arg};
-use std::io::Write;
+use anyhow::{bail, Result};
+use archive_engine::{ClientOffer, ServerAnswer};
+use log::debug;
 use std::sync::Arc;
 use tokio::time::Duration;
 use webrtc::api::interceptor_registry::register_default_interceptors;
@@ -11,56 +11,18 @@ use webrtc::data_channel::RTCDataChannel;
 use webrtc::ice_transport::ice_server::RTCIceServer;
 use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
-use webrtc::peer_connection::math_rand_alpha;
 use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
+use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
+use webrtc::peer_connection::{math_rand_alpha, RTCPeerConnection};
 
-mod signal;
+pub struct Negotiation {
+    pub server_answer: ServerAnswer,
+    pub peer_connection: Arc<RTCPeerConnection>,
+    pub done_rx: tokio::sync::mpsc::Receiver<()>,
+}
 
-async fn main() -> Result<()> {
-    let mut app = App::new("data-channels")
-        .version("0.1.0")
-        .author("Rain Liu <yliu@webrtc.rs>")
-        .about("An example of Data-Channels.")
-        .setting(AppSettings::DeriveDisplayOrder)
-        .setting(AppSettings::SubcommandsNegateReqs)
-        .arg(
-            Arg::new("FULLHELP")
-                .help("Prints more detailed help information")
-                .long("fullhelp"),
-        )
-        .arg(
-            Arg::new("debug")
-                .long("debug")
-                .short('d')
-                .help("Prints debug log information"),
-        );
-
-    let matches = app.clone().get_matches();
-
-    if matches.is_present("FULLHELP") {
-        app.print_long_help().unwrap();
-        std::process::exit(0);
-    }
-
-    let debug = matches.is_present("debug");
-    if debug {
-        env_logger::Builder::new()
-            .format(|buf, record| {
-                writeln!(
-                    buf,
-                    "{}:{} [{}] {} - {}",
-                    record.file().unwrap_or("unknown"),
-                    record.line().unwrap_or(0),
-                    record.level(),
-                    chrono::Local::now().format("%H:%M:%S.%6f"),
-                    record.args()
-                )
-            })
-            .filter(None, log::LevelFilter::Trace)
-            .init();
-    }
-
+pub async fn negotiate<'a>(client_offer: ClientOffer) -> Result<Negotiation> {
     // Everything below is the WebRTC-rs API! Thanks for using it ❤️.
 
     // Create a MediaEngine object to configure the supported codec
@@ -93,10 +55,11 @@ async fn main() -> Result<()> {
         ..Default::default()
     };
 
+    debug!("creating peer connection");
     // Create a new RTCPeerConnection
     let peer_connection = Arc::new(api.new_peer_connection(config).await?);
 
-    let (done_tx, mut done_rx) = tokio::sync::mpsc::channel::<()>(1);
+    let (done_tx, done_rx) = tokio::sync::mpsc::channel::<()>(1);
 
     // Set the handler for Peer connection state
     // This will notify you when the peer has connected/disconnected
@@ -158,10 +121,12 @@ async fn main() -> Result<()> {
         }))
         .await;
 
+    debug!("parsing client SDP");
     // Wait for the offer to be pasted
-    let line = signal::must_read_stdin()?;
-    let desc_data = signal::decode(line.as_str())?;
-    let offer = serde_json::from_str::<RTCSessionDescription>(&desc_data)?;
+    let mut offer = RTCSessionDescription::default();
+    offer.sdp_type = RTCSdpType::Offer;
+    offer.sdp = client_offer.sdp;
+    //serde_json::from_str::<RTCSessionDescription>(&client_offer.sdp)?;
 
     // Set the remote SessionDescription
     peer_connection.set_remote_description(offer).await?;
@@ -182,24 +147,17 @@ async fn main() -> Result<()> {
 
     // Output the answer in base64 so we can paste it in browser
     if let Some(local_desc) = peer_connection.local_description().await {
-        let json_str = serde_json::to_string(&local_desc)?;
-        let b64 = signal::encode(&json_str);
-        println!("{}", b64);
+        //let json_str = serde_json::to_string(&local_desc)?;
+        let server_answer = ServerAnswer {
+            sdp: local_desc.sdp,
+        };
+        debug!("succeeded negotiation");
+        Ok(Negotiation {
+            server_answer,
+            peer_connection,
+            done_rx,
+        })
     } else {
-        println!("generate local_description failed!");
+        bail!("failed to generate answer local description");
     }
-
-    println!("Press ctrl-c to stop");
-    tokio::select! {
-        _ = done_rx.recv() => {
-            println!("received done signal!");
-        }
-        _ = tokio::signal::ctrl_c() => {
-            println!("");
-        }
-    };
-
-    peer_connection.close().await?;
-
-    Ok(())
 }

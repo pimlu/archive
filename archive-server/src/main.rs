@@ -1,4 +1,5 @@
 mod handler;
+mod server_rtc;
 
 use warp::Filter;
 
@@ -24,13 +25,13 @@ async fn main() {
         ])
         .allow_methods(vec!["POST", "GET"]);
 
-    let connect = warp::post()
-        .and(warp::path("connect"))
+    let signal = warp::post()
+        .and(warp::path("signal"))
         .and(warp::body::content_length_limit(1024 * 16))
         .and(warp::body::json())
-        .and_then(handler::connect)
+        .and_then(handler::signal)
         .recover(_handle_rejection)
         .with(cors);
 
-    warp::serve(connect).run(([127, 0, 0, 1], 3030)).await
+    warp::serve(signal).run(([127, 0, 0, 1], 3030)).await
 }

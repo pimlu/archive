@@ -1,17 +1,15 @@
-use std::fmt::Display;
+mod wasm_rtc;
 
 use archive_client::run_init;
-use log::info;
+use js_sys::Reflect;
 use winit::event_loop::EventLoop;
 use winit::platform::web::WindowExtWebSys;
 
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{Request, RequestInit, RequestMode, Response};
-
-use archive_engine::{ClientOffer, ServerAnswer};
+use archive_engine::RtcServerHandle;
 
 use wasm_bindgen::prelude::*;
+
+use crate::wasm_rtc::WasmServerHandle;
 
 #[wasm_bindgen]
 pub async fn start_loop() -> JsValue {
@@ -35,43 +33,15 @@ pub async fn start_loop() -> JsValue {
     Closure::once_into_js(run)
 }
 
-fn fmt_jserr<T>(err: impl Display) -> Result<T, JsValue> {
-    Err(JsValue::from(format!("{err}")))
-}
-
 #[wasm_bindgen]
 pub async fn connect(hostname: String) -> Result<JsValue, JsValue> {
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.mode(RequestMode::Cors);
+    let handle = WasmServerHandle { hostname };
+    let session = handle.rtc_connect().await?;
 
-    let offer = ClientOffer {
-        sdp: String::from("hello"),
-    };
-    let offer_serialized = serde_json::to_string(&offer).or_else(fmt_jserr)?;
-    opts.body(Some(&JsValue::from_str(&offer_serialized)));
-
-    let url = format!("{hostname}/connect");
-
-    let request = Request::new_with_str_and_init(&url, &opts)?;
-
-    let headers = request.headers();
-    headers.set("Content-Type", "application/json")?;
-    headers.set("Accept", "application/json")?;
-
-    let window = web_sys::window().unwrap();
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
-
-    // `resp_value` is a `Response` object.
-    assert!(resp_value.is_instance_of::<Response>());
-    let resp: Response = resp_value.dyn_into()?;
-
-    // Convert this other `Promise` into a rust `Future`.
-    let json = JsFuture::from(resp.json()?).await?;
-
-    // Use serde to parse the JSON into a struct.
-    let branch_info: ServerAnswer = json.into_serde().or_else(fmt_jserr)?;
-
-    // Send the `Branch` struct back to JS as an `Object`.
-    Ok(JsValue::from_serde(&branch_info).unwrap())
+    let res = js_sys::Object::new();
+    let pc = JsValue::from(session.peer_connection);
+    let dc = JsValue::from(session.data_channel);
+    Reflect::set(&res, &JsValue::from("pc"), &pc)?;
+    Reflect::set(&res, &JsValue::from("dc"), &dc)?;
+    Ok(JsValue::from(res))
 }
