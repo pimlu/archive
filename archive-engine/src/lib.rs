@@ -1,4 +1,5 @@
 mod ecs;
+pub mod random;
 mod rtc_shared;
 mod types;
 

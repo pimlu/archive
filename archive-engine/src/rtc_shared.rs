@@ -1,4 +1,3 @@
-use futures::{future::BoxFuture, Future};
 use serde::{Deserialize, Serialize};
 
 use crate::SharedFuture;

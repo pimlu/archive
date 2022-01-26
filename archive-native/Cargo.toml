@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 archive-client = { path = "../archive-client" }
+archive-engine = { path = "../archive-engine" }
+
+rand = "0.8"
 winit = "0.26.0"
 env_logger = "0.9.0"
 pollster = "0.2.4"

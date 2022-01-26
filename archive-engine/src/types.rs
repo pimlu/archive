@@ -13,4 +13,3 @@ pub type R = Rad<f64>;
 // just like BoxFuture but not send, because this will
 // be used in the single threaded browser environment
 pub type SharedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
-pub trait SharedFutureExt: Future {}

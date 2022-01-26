@@ -137,6 +137,7 @@ dependencies = [
 name = "archive-client"
 version = "0.1.0"
 dependencies = [
+ "archive-engine",
  "bevy_ecs",
  "bytemuck",
  "cgmath",
@@ -154,6 +155,8 @@ dependencies = [
  "bevy_ecs",
  "cgmath",
  "futures",
+ "log",
+ "once_cell",
  "serde",
  "serde_json",
 ]
@@ -163,8 +166,10 @@ name = "archive-native"
 version = "0.1.0"
 dependencies = [
  "archive-client",
+ "archive-engine",
  "env_logger",
  "pollster",
+ "rand",
  "winit",
 ]
 

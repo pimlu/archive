@@ -1,4 +1,5 @@
 use crate::*;
+use archive_engine::random;
 use log::info;
 
 /// Example struct holds references to wgpu resources and frame persistent data
@@ -6,6 +7,7 @@ pub struct App {
     frame_counter: FrameCounter,
     sprite_painter: SpritePainter,
     sprite_texture: SpriteTexture,
+    sprites: Vec<GpuSprite>
 }
 
 impl App {
@@ -25,10 +27,23 @@ impl App {
             texture_handle,
         );
 
+        //let mut rng = random::new();
+
+        let mut sprites = Vec::new();
+        for i in 0..3 {
+            sprites.push(GpuSprite {
+                position: [i as f32 * 100., i as f32 * 100.],//[rng.gen32(), rng.gen32()],
+                size: [1000., 1000.],
+                rotation: i as f32 / 3.,
+                color: 0xffffffff,
+                ..Default::default()
+            });
+        }
         App {
             frame_counter,
             sprite_painter,
             sprite_texture,
+            sprites
         }
     }
 
@@ -53,6 +68,6 @@ impl App {
             info!("fps: {}", fps);
         }
         self.sprite_painter
-            .render(view, device, queue, &self.sprite_texture);
+            .render(view, device, queue, &self.sprite_texture, &self.sprites);
     }
 }

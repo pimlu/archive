@@ -3,7 +3,7 @@
 pub struct Vertex2D(pub [f32; 2]);
 
 impl Vertex2D {
-    pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+    pub fn _desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex2D>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
@@ -15,7 +15,3 @@ impl Vertex2D {
         }
     }
 }
-
-// trait Painter {
-//     def
-// }

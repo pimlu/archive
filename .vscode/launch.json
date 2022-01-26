@@ -26,43 +26,6 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug example 'native'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--example=native",
-                    "--package=archive-client"
-                ],
-                "filter": {
-                    "name": "native",
-                    "kind": "example"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in example 'native'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--example=native",
-                    "--package=archive-client"
-                ],
-                "filter": {
-                    "name": "native",
-                    "kind": "example"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
             "name": "Debug unit tests in library 'archive-engine'",
             "cargo": {
                 "args": [
@@ -74,6 +37,43 @@
                 "filter": {
                     "name": "archive-engine",
                     "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'archive-native'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=archive-native",
+                    "--package=archive-native"
+                ],
+                "filter": {
+                    "name": "archive-native",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'archive-native'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=archive-native",
+                    "--package=archive-native"
+                ],
+                "filter": {
+                    "name": "archive-native",
+                    "kind": "bin"
                 }
             },
             "args": [],
@@ -94,11 +94,8 @@
                     "kind": "bin"
                 }
             },
-            "args": ["./", "--listen", "[::]:4433"],
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "RUST_LOG": "debug"
-            }
+            "args": [],
+            "cwd": "${workspaceFolder}"
         },
         {
             "type": "lldb",
