@@ -5,19 +5,11 @@ use bytemuck::{Zeroable, Pod};
 use wgpu::util::DeviceExt;
 
 pub struct SpritePainter {
-    global_group: wgpu::BindGroup,
     local_buffer: wgpu::Buffer,
     local_group: wgpu::BindGroup,
 
     render_pipeline: wgpu::RenderPipeline,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
-}
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
-struct Globals {
-    mvp: [[f32; 4]; 4],
 }
 
 
@@ -38,62 +30,18 @@ pub struct GpuSprite {
 
 
 impl SpritePainter {
-    pub fn init(
-        config: &wgpu::SurfaceConfiguration,
-        _adapter: &wgpu::Adapter,
-        device: &wgpu::Device,
-        _queue: &wgpu::Queue,
-    ) -> Self {
+    pub fn init(graphics: &GraphicsContext, global_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
+
+        let GraphicsContext {
+            config,
+            device,
+            ..
+        } = graphics;
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("sprite_shader.wgsl"))),
         });
 
-        // TODO resize this thing when thw window resizes, or more likely pass in a camera matrix
-        let globals = Globals {
-            mvp: cgmath::ortho(
-                0.0,
-                config.width as f32,
-                0.0,
-                config.height as f32,
-                -1.0,
-                1.0,
-            )
-            .into(),
-        };
-        let global_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::bytes_of(&globals),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
-        });
-        
-        let global_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: wgpu::BufferSize::new(mem::size_of::<Globals>() as _),
-                        },
-                        count: None,
-                    },
-                    ],
-                    label: None,
-                });
-        
-        let global_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &global_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: global_buffer.as_entire_binding(),
-                },
-            ],
-            label: None,
-        });
 
         let local_size = MAX_SPRITES * mem::size_of::<GpuSprite>();
         let local_buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -157,7 +105,7 @@ impl SpritePainter {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[&global_bind_group_layout, &local_bind_group_layout, &texture_bind_group_layout],
+            bind_group_layouts: &[global_bind_group_layout, &local_bind_group_layout, &texture_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -185,7 +133,6 @@ impl SpritePainter {
         });
 
         SpritePainter {
-            global_group,
             local_buffer,
             local_group,
             render_pipeline,
@@ -195,12 +142,16 @@ impl SpritePainter {
 
     pub fn render(
         &mut self,
+        ctx: &GraphicsContext,
         view: &wgpu::TextureView,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
         sprite_texture: &SpriteTexture,
         sprites: &[GpuSprite]
     ) {
+        let GraphicsContext {
+            queue,
+            device,
+            ..
+        } = ctx;
         queue.write_buffer(&self.local_buffer, 0, bytemuck::cast_slice(sprites));
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -219,7 +170,7 @@ impl SpritePainter {
             });
             render_pass.set_pipeline(&self.render_pipeline);
 
-            render_pass.set_bind_group(0, &self.global_group, &[]);
+            render_pass.set_bind_group(0, &ctx.global.global_group, &[]);
             render_pass.set_bind_group(1, &self.local_group, &[]);
             render_pass.set_bind_group(2, &sprite_texture.bind_group, &[]);
             render_pass.draw(0..4 as u32, 0..sprites.len() as u32);

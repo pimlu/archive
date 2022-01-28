@@ -1,4 +1,4 @@
-struct Globals {
+struct Global {
     mvp: mat4x4<f32>;
 };
 
@@ -16,7 +16,7 @@ struct LocalsArr {
 };
 
 [[group(0), binding(0)]]
-var<uniform> globals: Globals;
+var<uniform> global: Global;
 
 [[group(1), binding(0)]]
 var<uniform> locals: LocalsArr;
@@ -31,8 +31,11 @@ struct VertexOutput {
 fn vs_main([[builtin(vertex_index)]] vi: u32, [[builtin(instance_index)]] ii: u32) -> VertexOutput {
     let instance = locals.arr[ii];
     let tc = vec2<f32>(f32(vi & 1u), 0.5 * f32(vi & 2u));
-    let offset = vec2<f32>(tc.x * instance.size.x, tc.y * instance.size.y);
-    let pos = globals.mvp * vec4<f32>(instance.position + offset, 0.0, 1.0);
+    let offset = instance.size * (tc - vec2<f32>(0.5, 0.5));
+    let trig = vec2<f32>(cos(instance.rotation), sin(instance.rotation));
+    let rotate = mat2x2<f32>(trig.x, -trig.y, trig.y, trig.x);
+    let model_pos = instance.position + rotate * offset;
+    let pos = global.mvp * vec4<f32>(model_pos, 0.0, 1.0);
     let color = vec4<f32>((vec4<u32>(instance.color) >> vec4<u32>(0u, 8u, 16u, 24u)) & vec4<u32>(255u)) / 255.0;
     return VertexOutput(pos, tc, color);
 }

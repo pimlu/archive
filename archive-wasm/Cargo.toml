@@ -25,7 +25,7 @@ serde_json = "1.0"
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.6" }
 wasm-bindgen-futures = "0.4.28"
-winit = "0.26.0"
+winit = "0.26"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = [
     "Window",

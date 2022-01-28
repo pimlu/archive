@@ -37,7 +37,7 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
 
     let swapchain_format = surface.get_preferred_format(&adapter).unwrap();
 
-    let mut config = wgpu::SurfaceConfiguration {
+    let config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         format: swapchain_format,
         width: size.width,
@@ -47,7 +47,17 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
 
     surface.configure(&device, &config);
 
-    let mut app = App::init(&config, &adapter, &device, &queue);
+    let global = GlobalBuffer::new(&device);
+
+    let mut ctx = GraphicsContext {
+        config,
+        adapter,
+        device,
+        queue,
+        global
+    };
+
+    let mut app = App::init(&ctx);
 
     // return a FnOnce so we can "escape" wasm-bindgen-futures and run this
     // call which currently panics later. This is because wasm-bindgen-futures
@@ -57,7 +67,7 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
             // Have the closure take ownership of the resources.
             // `event_loop.run` never returns, therefore we must do this to ensure
             // the resources are properly cleaned up.
-            let _ = (&instance, &adapter);
+            let _ = &instance;
 
             *control_flow = ControlFlow::Poll;
             match event {
@@ -66,9 +76,9 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
                     ..
                 } => {
                     // Reconfigure the surface with the new size
-                    config.width = size.width;
-                    config.height = size.height;
-                    surface.configure(&device, &config);
+                    ctx.config.width = size.width;
+                    ctx.config.height = size.height;
+                    surface.configure(&ctx.device, &ctx.config);
                 }
                 Event::RedrawRequested(_) => {
                     let frame = surface
@@ -78,7 +88,7 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
                         .texture
                         .create_view(&wgpu::TextureViewDescriptor::default());
 
-                    app.render(&view, &device, &queue);
+                    app.render(&ctx, &view);
 
                     frame.present();
                 }

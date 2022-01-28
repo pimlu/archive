@@ -1,3 +1,14 @@
+use crate::*;
+
+pub struct GraphicsContext {
+    pub config: wgpu::SurfaceConfiguration,
+    pub adapter: wgpu::Adapter,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+    pub global: GlobalBuffer
+}
+
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex2D(pub [f32; 2]);
