@@ -7,7 +7,7 @@ pub struct App {
     frame_counter: FrameCounter,
     sprite_painter: SpritePainter,
     sprite_texture: SpriteTexture,
-    sprites: Vec<GpuSprite>
+    sprites: Vec<GpuSprite>,
 }
 
 impl App {
@@ -33,7 +33,7 @@ impl App {
         let mut sprites = Vec::new();
         for i in 0..10 {
             sprites.push(GpuSprite {
-                position: [i as f32 * 200. + 550., i as f32 * 100. + 550.],//[rng.gen32(), rng.gen32()],
+                position: [i as f32 * 200. + 550., i as f32 * 100. + 550.], //[rng.gen32(), rng.gen32()],
                 size: [800., 800.],
                 rotation: i as f32 / 3.,
                 color: 0xffffffff,
@@ -44,7 +44,7 @@ impl App {
             frame_counter,
             sprite_painter,
             sprite_texture,
-            sprites
+            sprites,
         }
     }
 
@@ -73,8 +73,8 @@ impl App {
             mvp: cgmath::ortho(
                 0.0,
                 ctx.config.width as f32,
-                0.0,
                 ctx.config.height as f32,
+                0.0,
                 -1.0,
                 1.0,
             )
@@ -82,7 +82,28 @@ impl App {
         };
         GlobalBuffer::write(ctx, &global_data);
 
-        self.sprite_painter
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        // no MSAA needed for clearing
+        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: None,
+            color_attachments: &[wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: true,
+                },
+            }],
+            depth_stencil_attachment: None,
+        });
+
+        let clear = encoder.finish();
+
+        let sprites = self
+            .sprite_painter
             .render(ctx, view, &self.sprite_texture, &self.sprites);
+        ctx.queue.submit([clear, sprites]);
     }
 }

@@ -1,16 +1,14 @@
-use archive_engine::random::{RandomImpl, RandomBuilderImpl, Random};
+use archive_engine::random::{Random, RandomBuilderImpl, RandomImpl};
 use rand::prelude::*;
 
 pub struct NativeRandomBuilder {}
 struct NativeRandom {
-    rng: ThreadRng
+    rng: ThreadRng,
 }
 
 impl RandomBuilderImpl for NativeRandomBuilder {
     fn create(&self) -> Random {
-        Box::new(NativeRandom {
-            rng: thread_rng()
-        })
+        Box::new(NativeRandom { rng: thread_rng() })
     }
 }
 impl RandomImpl for NativeRandom {

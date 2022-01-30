@@ -1,6 +1,7 @@
 mod app;
 mod frame_counter;
 mod global_buffer;
+pub mod launch_config;
 mod sprite;
 mod types;
 mod window;

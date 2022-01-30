@@ -1,7 +1,7 @@
 mod wasm_random;
 mod wasm_rtc;
 
-use archive_client::run_init;
+use archive_client::{launch_config, run_init};
 use js_sys::Reflect;
 use wasm_random::WasmRandomBuilder;
 use winit::event_loop::EventLoop;
@@ -16,6 +16,7 @@ use crate::wasm_rtc::WasmServerHandle;
 #[wasm_bindgen]
 pub async fn start_loop() -> JsValue {
     random::register(WasmRandomBuilder {});
+    launch_config::register(launch_config::LaunchConfig { sample_count: 4 });
 
     let event_loop = EventLoop::new();
     let window = winit::window::Window::new(&event_loop).unwrap();

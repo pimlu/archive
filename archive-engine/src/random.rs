@@ -1,7 +1,5 @@
-
 use log::warn;
 use once_cell::sync::OnceCell;
-
 
 pub trait RandomImpl {
     fn gen(&mut self) -> f64;

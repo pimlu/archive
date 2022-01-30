@@ -1,11 +1,12 @@
 mod native_random;
 
-use archive_client::run_init;
+use archive_client::{launch_config, run_init};
 use archive_engine::random;
 use native_random::NativeRandomBuilder;
 
 fn main() {
     random::register(NativeRandomBuilder {});
+    launch_config::register(launch_config::LaunchConfig { sample_count: 4 });
 
     let event_loop = winit::event_loop::EventLoop::new();
     let window = winit::window::Window::new(&event_loop).unwrap();

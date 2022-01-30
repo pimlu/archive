@@ -6,6 +6,15 @@ use winit::{
     window::Window,
 };
 
+pub struct GraphicsContext {
+    pub config: wgpu::SurfaceConfiguration,
+    pub adapter: wgpu::Adapter,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+    pub global: GlobalBuffer,
+    pub multisampled_fb: Option<wgpu::TextureView>,
+}
+
 pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce() {
     let size = window.inner_size();
     let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -49,12 +58,15 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
 
     let global = GlobalBuffer::new(&device);
 
+    let multisampled_fb = launch_config::multisampled_framebuffer(&device, &config);
+
     let mut ctx = GraphicsContext {
         config,
         adapter,
         device,
         queue,
-        global
+        global,
+        multisampled_fb,
     };
 
     let mut app = App::init(&ctx);
@@ -79,6 +91,8 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
                     ctx.config.width = size.width;
                     ctx.config.height = size.height;
                     surface.configure(&ctx.device, &ctx.config);
+                    ctx.multisampled_fb =
+                        launch_config::multisampled_framebuffer(&ctx.device, &ctx.config);
                 }
                 Event::RedrawRequested(_) => {
                     let frame = surface
