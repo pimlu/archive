@@ -102,7 +102,7 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
                         .texture
                         .create_view(&wgpu::TextureViewDescriptor::default());
 
-                    app.render(&ctx, &view);
+                    app.render(&mut ctx, &view);
                     frame.present();
                     app.post_frame(&ctx);
                 }

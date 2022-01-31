@@ -74,7 +74,7 @@ impl App {
         //empty
     }
 
-    pub fn render(&mut self, ctx: &GraphicsContext, view: &wgpu::TextureView) {
+    pub fn render(&mut self, ctx: &mut GraphicsContext, view: &wgpu::TextureView) {
         let (_last_frametime, fps_opt) = self.frame_counter.tick();
         if let Some(fps) = fps_opt {
             self.last_fps = fps;

@@ -31,12 +31,12 @@ impl TextPainter {
 
     pub fn render(
         &mut self,
-        ctx: &GraphicsContext,
+        ctx: &mut GraphicsContext,
         view: &wgpu::TextureView,
         glyph_brush: &mut GlyphBrush<()>,
         text: &[wgpu_glyph::Section],
     ) -> CommandBuffer {
-        let GraphicsContext { device, .. } = ctx;
+        let GraphicsContext { device, queue, .. } = ctx;
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
@@ -48,7 +48,7 @@ impl TextPainter {
         glyph_brush
             .draw_queued_with_transform(
                 &device,
-                &mut self.staging_belt,
+                queue,
                 &mut encoder,
                 view,
                 transform,
