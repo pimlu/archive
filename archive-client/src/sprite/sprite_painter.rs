@@ -1,3 +1,4 @@
+use super::*;
 use crate::*;
 use std::{borrow::Cow, mem};
 
@@ -151,7 +152,13 @@ impl SpritePainter {
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
-                color_attachments: &[launch_config::color_attachment(ctx, view)],
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: true,
+                    },
+                    ..launch_config::color_attachment(ctx, view)
+                }],
                 depth_stencil_attachment: None,
             });
             render_pass.set_pipeline(&self.render_pipeline);

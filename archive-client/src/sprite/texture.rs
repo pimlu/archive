@@ -1,11 +1,10 @@
 pub struct TextureHandle {
-    pub texture: wgpu::Texture,
-    pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
+    pub(super) view: wgpu::TextureView,
+    pub(super) sampler: wgpu::Sampler,
 }
 
 impl TextureHandle {
-    pub fn init(device: &wgpu::Device, queue: &wgpu::Queue, image_bytes: &[u8]) -> Self {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, image_bytes: &[u8]) -> Self {
         let image = image::load_from_memory(image_bytes).unwrap();
         let image_rgba = image.as_rgba8().unwrap();
 
@@ -57,11 +56,7 @@ impl TextureHandle {
             ..Default::default()
         });
 
-        Self {
-            texture,
-            view,
-            sampler,
-        }
+        Self { view, sampler }
     }
 }
 

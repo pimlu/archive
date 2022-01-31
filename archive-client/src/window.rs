@@ -103,8 +103,8 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
                         .create_view(&wgpu::TextureViewDescriptor::default());
 
                     app.render(&ctx, &view);
-
                     frame.present();
+                    app.post_frame(&ctx);
                 }
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,

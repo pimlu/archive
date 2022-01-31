@@ -1,5 +1,5 @@
 use crate::*;
-use std::mem;
+use std::{cell::RefCell, mem};
 
 use wgpu::util::DeviceExt;
 
@@ -10,6 +10,8 @@ pub struct Global {
 }
 
 pub struct GlobalBuffer {
+    // RefCell to imitate the read-write behavior of wgpu objects
+    global_data: RefCell<Global>,
     global_buffer: wgpu::Buffer,
     pub global_bind_group_layout: wgpu::BindGroupLayout,
     pub global_group: wgpu::BindGroup,
@@ -50,13 +52,20 @@ impl GlobalBuffer {
             label: None,
         });
         GlobalBuffer {
+            global_data: RefCell::new(global_data),
             global_buffer,
             global_bind_group_layout,
             global_group,
         }
     }
-    pub fn write(ctx: &GraphicsContext, global_data: &Global) {
+    pub fn get_data(&self) -> Global {
+        *self.global_data.borrow()
+    }
+    pub fn write(ctx: &GraphicsContext, global_data: Global) {
         let GraphicsContext { queue, global, .. } = ctx;
-        queue.write_buffer(&global.global_buffer, 0, bytemuck::bytes_of(global_data));
+
+        *global.global_data.borrow_mut() = global_data;
+
+        queue.write_buffer(&global.global_buffer, 0, bytemuck::bytes_of(&global_data));
     }
 }

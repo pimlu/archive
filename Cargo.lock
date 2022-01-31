@@ -166,6 +166,7 @@ dependencies = [
  "bevy_ecs",
  "bytemuck",
  "cgmath",
+ "futures",
  "image",
  "instant",
  "log",

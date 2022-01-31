@@ -6,7 +6,7 @@ use native_random::NativeRandomBuilder;
 
 fn main() {
     random::register(NativeRandomBuilder {});
-    launch_config::register(launch_config::LaunchConfig { sample_count: 4 });
+    launch_config::register(launch_config::LaunchConfig { sample_count: 1 });
 
     let event_loop = winit::event_loop::EventLoop::new();
     let window = winit::window::Window::new(&event_loop).unwrap();
