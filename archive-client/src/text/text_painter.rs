@@ -31,7 +31,7 @@ impl TextPainter {
 
     pub fn render(
         &mut self,
-        ctx: &mut GraphicsContext,
+        ctx: &GraphicsContext,
         view: &wgpu::TextureView,
         glyph_brush: &mut GlyphBrush<()>,
         text: &[wgpu_glyph::Section],

@@ -140,7 +140,7 @@ impl SpritePainter {
 
     pub fn render(
         &mut self,
-        ctx: &mut GraphicsContext,
+        ctx: &GraphicsContext,
         view: &wgpu::TextureView,
         sprite_texture: &SpriteTexture,
         sprites: &[GpuSprite],
