@@ -61,7 +61,8 @@ impl Realm {
     }
     pub fn despawn(&mut self, ent: Entity) {
         if let Some(_) = self.get_mut::<&Replicated>(ent) {
-            self.ent_map.remove_by_right(&ent);
+            let token = self.ent_map.remove_by_right(&ent).unwrap().0;
+            self.repl_token_pool.free(token);
         }
         self.world.despawn(ent).unwrap();
     }

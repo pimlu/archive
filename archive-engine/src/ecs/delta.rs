@@ -277,7 +277,13 @@ impl ServerDelta {
             return Some(DeltaEntityPatch::DespawnEntity);
         }
 
-        let old_ent = old_token.map(|tok| base.entity_for_token(&tok)).flatten();
+        let old_ent = if old_token == new_token {
+            // if the tokens match, we are doing a diff and we need to fetch
+            // the entity from the base
+            old_token.map(|tok| base.entity_for_token(&tok)).flatten()
+        } else {
+            None
+        };
         let new_ent = realm.entity_for_token(&new_token.unwrap());
 
         let update = ServerDelta::patches_for_components(
@@ -536,6 +542,47 @@ mod tests {
             assert_eq!(
                 diff.inner.actions[0].ent_patch,
                 DeltaEntityPatch::DespawnEntity
+            );
+        }
+    }
+
+    #[test]
+    fn test_spawn_replace() {
+        let mut realm = Realm::new();
+        let mut base = ServerSnapshot::new();
+
+        let pos_a = Position {
+            xy: V_A,
+            zed: mk_zed(2),
+        };
+
+        let ent = realm.spawn((pos_a, R_PLAYER));
+
+        let mut midpoint = {
+            let diff = ServerDelta::diff(&mut base, &mut realm);
+
+            diff.apply_server(&mut base)
+        };
+
+        realm.despawn(ent);
+        let pos_b = Position {
+            xy: V_B,
+            zed: mk_zed(0),
+        };
+        realm.spawn((pos_b, R_PLAYER));
+
+        {
+            let diff = ServerDelta::diff(&mut midpoint, &mut realm);
+
+            assert_eq!(diff.inner.actions.len(), 1, "has a single action");
+
+            let ent_patch = &diff.inner.actions[0].ent_patch;
+            assert_eq!(
+                *ent_patch,
+                DeltaEntityPatch::SpawnEntity(vec![DeltaComponentPatch::DiffComponent(
+                    DeltaDiff::Position(pos_b)
+                )]),
+                "spawns in the new position without subtracting pos_a from pos_b"
             );
         }
     }
