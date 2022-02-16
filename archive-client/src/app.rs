@@ -98,16 +98,16 @@ impl App {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         // no MSAA needed for clearing
         encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: None,
-                color_attachments: &[wgpu::RenderPassColorAttachment {
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
-                    },
-                    ..launch_config::color_attachment(ctx, view)
-                }],
-                depth_stencil_attachment: None,
-            });
+            label: None,
+            color_attachments: &[wgpu::RenderPassColorAttachment {
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: true,
+                },
+                ..launch_config::color_attachment(ctx, view)
+            }],
+            depth_stencil_attachment: None,
+        });
 
         let clear = encoder.finish();
 

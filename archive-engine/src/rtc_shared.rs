@@ -1,3 +1,4 @@
+use futures::{Sink, Stream};
 use serde::{Deserialize, Serialize};
 
 use crate::SharedFuture;
@@ -12,7 +13,13 @@ pub struct ServerAnswer {
     pub sdp: String,
 }
 
-pub trait RtcClientSession {}
+pub trait RawChannel: Stream<Item = Vec<u8>> + Sink<Vec<u8>> {}
+
+pub trait RtcClientSession {
+    type Channel: RawChannel;
+    fn channels(&mut self) -> &mut [Self::Channel];
+    fn reliability(&self) -> &[bool];
+}
 
 pub trait RtcServerHandle {
     type Session: RtcClientSession;

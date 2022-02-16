@@ -11,7 +11,7 @@ archive-engine = { path = "../archive-engine" }
 # uses the new queue API: https://github.com/genusistimelord/wgpu_glyph/tree/query
 wgpu_glyph = { path = "../../wgpu_glyph" } # "0.16"
 
-bevy_ecs = "0.6.0"
+hecs = "0.7"
 cgmath = "0.18.0"
 futures = "0.3"
 wgpu = { version = "0.12", default-features = false }

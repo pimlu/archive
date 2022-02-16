@@ -1,56 +1,114 @@
 use crate::*;
 
-use bevy_ecs::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Component)]
-pub struct Position {
-    xy: P2,
-    _zed: Zed,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Blueprint {
+    Player,
+    Bullet,
+    Static,
 }
-#[derive(Component)]
-pub struct Rotation {
-    _rad: R,
-}
-#[derive(Component)]
-pub struct Velocity {
-    xy: V2,
-}
-#[derive(Component)]
-pub struct Scale {
-    _xy: V2,
-}
-
-pub fn movement(mut query: Query<(&mut Position, &Velocity)>) {
-    for (mut position, velocity) in query.iter_mut() {
-        position.xy += velocity.xy;
+derive_math_components! {
+    pub struct Position {
+        pub xy: V2,
+        pub zed: Zed,
+    }
+    pub struct Rotation {
+        pub rad: R,
+    }
+    pub struct Velocity {
+        pub xy: V2,
+    }
+    pub struct Scale {
+        pub xy: V2,
     }
 }
 
-#[derive(Component)]
-pub struct Camera {}
+pub type MovementQ = (&'static mut Position, &'static Velocity);
 
-#[derive(Component)]
-pub struct Player {
-    _id: u8,
-}
-#[derive(Component)]
-pub struct Input {
-    _aim: V2,
-    _movement: V2,
-}
-#[derive(Component)]
-pub struct Bullet {
-    _id: u16,
-}
-#[derive(Component)]
-pub struct Health {
-    value: u16,
+pub fn movement_system(realm: &mut Realm) {
+    let Realm {
+        world,
+        movement_query,
+        ..
+    } = realm;
+    for (_id, (pos, vel)) in movement_query.query_mut(world) {
+        pos.xy += vel.xy;
+    }
 }
 
-pub fn death(mut commands: Commands, query: Query<(Entity, &Health), Changed<Health>>) {
-    for (entity, health) in query.iter() {
-        if health.value == 0 {
-            commands.entity(entity).despawn();
+derive_components! {
+    pub struct Camera {}
+
+    pub struct Player {
+        _id: u8,
+    }
+    // replicated player inputs
+    pub struct Input {
+        movement: V2,
+        aim: R,
+    }
+}
+
+pub type InputQ = (&'static mut Velocity, &'static mut Rotation, &'static Input);
+
+pub fn input_system(realm: &mut Realm) {
+    let Realm {
+        world, input_query, ..
+    } = realm;
+    for (_id, (vel, rot, input)) in input_query.query_mut(world) {
+        vel.xy += input.movement;
+        rot.rad = input.aim;
+    }
+}
+
+derive_components! {
+    pub struct Bullet {}
+    pub struct Dead {}
+}
+pub(super) type HealthVal = std::num::Wrapping<u16>;
+derive_math_components! {
+    pub struct Health {
+        value: HealthVal,
+    }
+}
+impl Health {
+    pub fn new(value: u16) -> Self {
+        Health {
+            value: std::num::Wrapping(value),
         }
+    }
+}
+
+pub type HealthQ = &'static Health;
+
+pub fn health_system(realm: &mut Realm) {
+    let Realm {
+        world,
+        health_query,
+        ..
+    } = realm;
+    let mut to_despawn = Vec::new();
+    for (id, health) in health_query.query_mut(world) {
+        if health.value.0 == 0 {
+            to_despawn.push(id);
+        }
+    }
+    for id in to_despawn {
+        world.insert_one(id, Dead {}).unwrap();
+    }
+}
+
+pub type DeadQ = &'static Dead;
+pub fn death_system(realm: &mut Realm) {
+    let Realm {
+        world, death_query, ..
+    } = realm;
+    let mut to_remove = Vec::new();
+    for (id, _) in death_query.query_mut(world) {
+        to_remove.push(id);
+    }
+    for id in to_remove {
+        world.despawn(id).unwrap();
     }
 }
