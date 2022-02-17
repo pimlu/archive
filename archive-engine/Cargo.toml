@@ -9,6 +9,8 @@ edition = "2021"
 futures = "0.3"
 once_cell = "1.9"
 log = "0.4"
+rand = "0.8"
+rand_pcg = "0.3.1"
 
 # fixed and its related packages are small and a bit sus, use exact versions
 fixed = { version = "=1.12.0", features=["serde"] }

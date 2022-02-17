@@ -1,8 +1,10 @@
-use crate::containers::CircularBuf;
+use crate::{containers::CircularBuf, ecs::Snapshot};
 
 const NUM_SNAPSHOTS: usize = 32;
 
-struct SnapshotHistory<S> {
+struct ClientSnapshotHistory {
     latest_id: usize,
-    history: CircularBuf<S, NUM_SNAPSHOTS>,
+    history: CircularBuf<Snapshot, NUM_SNAPSHOTS>,
 }
+
+impl ClientSnapshotHistory {}

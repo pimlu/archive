@@ -1,3 +1,4 @@
+use super::*;
 use crate::*;
 
 use hecs::*;
