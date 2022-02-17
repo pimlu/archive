@@ -76,6 +76,9 @@ impl<T, const CAP: usize> CircularBuf<T, CAP> {
     }
 }
 
+// infers absolute indices from indices modulo VCAP.
+// stores the last CAP entires in a CircularBuf.
+// assumes CAP <<< VCAP.
 pub struct RollingBuf<T, const CAP: usize, const VCAP: usize> {
     backing: CircularBuf<Option<T>, CAP>,
 }
@@ -86,6 +89,10 @@ pub enum RollingBufError {
 }
 
 impl<T, const CAP: usize, const VCAP: usize> RollingBuf<T, CAP, VCAP> {
+
+    const fn check_caps() {
+        assert!(CAP * 8 <= VCAP, "VCAP is too small to detect rollovers correctly");
+    }
     fn calc_true_index(&self, rolling_index: usize) -> Result<usize, RollingBufError> {
         if rolling_index >= VCAP {
             return Err(RollingBufError::OutOfBounds);
@@ -118,6 +125,7 @@ impl<T, const CAP: usize, const VCAP: usize> RollingBuf<T, CAP, VCAP> {
         }
     }
     pub fn new() -> Self {
+        Self::check_caps();
         RollingBuf {
             backing: CircularBuf::new(),
         }
@@ -206,5 +214,11 @@ mod tests {
                 let _ = buf.index(idx);
             }
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "VCAP is too small to detect rollovers correctly")]
+    fn bad_cap() {
+        let _ = RollingBuf::<i32, 2, 4>::new();
     }
 }
