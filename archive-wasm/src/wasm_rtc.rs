@@ -10,7 +10,8 @@ use web_sys::{
     RtcPeerConnection, RtcSdpType, RtcSessionDescriptionInit,
 };
 
-use archive_engine::{ClientOffer, RtcClientSession, RtcServerHandle, ServerAnswer, SharedFuture};
+use archive_engine::session::*;
+use archive_engine::SharedFuture;
 
 use wasm_bindgen::prelude::*;
 

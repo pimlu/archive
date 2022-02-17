@@ -2,9 +2,9 @@ use crate::*;
 
 use hecs::*;
 
-pub(super) type ReplPool = token_pool::TokenPool;
-pub(super) type ReplToken = token_pool::PoolToken;
-pub(super) type ReplKey = token_pool::PoolKey;
+pub(super) type ReplPool = containers::TokenPool;
+pub(super) type ReplToken = containers::PoolToken;
+pub(super) type ReplKey = containers::PoolKey;
 
 pub(super) type Priority = u32;
 

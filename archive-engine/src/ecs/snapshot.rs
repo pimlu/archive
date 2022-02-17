@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 
 use hecs::*;
 
+pub type SnapshotId = usize;
+
 pub struct Snapshot {
     pub(super) world: World,
     // map from repl keys to entities that exist in this snapshot specifically

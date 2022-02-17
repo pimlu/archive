@@ -1,5 +1,5 @@
 use anyhow::Result;
-use archive_engine::ClientOffer;
+use archive_engine::session::ClientOffer;
 use log::debug;
 use warp::reject::Reject;
 

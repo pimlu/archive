@@ -15,10 +15,11 @@ pub struct ServerAnswer {
 
 pub trait RawChannel: Stream<Item = Vec<u8>> + Sink<Vec<u8>> {}
 
+// FIXME bring this back
 pub trait RtcClientSession {
-    type Channel: RawChannel;
-    fn channels(&mut self) -> &mut [Self::Channel];
-    fn reliability(&self) -> &[bool];
+    // type Channel: RawChannel;
+    // fn channels(&mut self) -> &mut [Self::Channel];
+    // fn reliability(&self) -> &[bool];
 }
 
 pub trait RtcServerHandle {

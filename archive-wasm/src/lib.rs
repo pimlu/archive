@@ -7,7 +7,7 @@ use wasm_random::WasmRandomBuilder;
 use winit::event_loop::EventLoop;
 use winit::platform::web::WindowExtWebSys;
 
-use archive_engine::{random, RtcServerHandle};
+use archive_engine::{random, session::RtcServerHandle};
 
 use wasm_bindgen::prelude::*;
 
