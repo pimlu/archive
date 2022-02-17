@@ -174,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rollover_basic() {
+    fn test_rollover_circular_access() {
         let mut buf = RollingBuf::<i32, 2, 16>::new();
 
         buf.add(0, 0).unwrap();
@@ -192,6 +192,19 @@ mod tests {
 
         assert_eq!(buf.index(0), Err(RollingBufError::TooOld));
         assert_eq!(buf.index(3), Err(RollingBufError::OutOfBounds));
+    }
+
+    #[test]
+    fn test_rollover_wraparound() {
+        let mut buf = RollingBuf::<i32, 2, 16>::new();
+        for i in 0..=20 {
+            buf.add(i as usize % 16, i).unwrap();
+        }
+
+        assert_eq!(buf.index(18 % 16), Err(RollingBufError::TooOld));
+        assert_eq!(*buf.index(19 % 16).unwrap().unwrap(), 19);
+        assert_eq!(*buf.index(20 % 16).unwrap().unwrap(), 20);
+        assert_eq!(buf.index(21 % 16), Err(RollingBufError::OutOfBounds));
     }
 
     #[test]
