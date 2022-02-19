@@ -6,14 +6,12 @@ use bytemuck::{Pod, Zeroable};
 use wgpu::CommandBuffer;
 
 pub struct SpritePainter {
-    local_buffer: wgpu::Buffer,
-    local_group: wgpu::BindGroup,
+    instance_buffer: wgpu::Buffer,
 
     render_pipeline: wgpu::RenderPipeline,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
-// FIXME shader compile takes too long
 const MAX_SPRITES: usize = 512;
 // 256 bit minimum alignment imposed by nvidia or something. there is also
 // min_uniform_buffer_offset_alignment which basically means the GPU could
@@ -25,8 +23,44 @@ pub struct GpuSprite {
     pub size: [f32; 2],
     pub rotation: f32,
     pub color: u32,
-    // NOTE: you MUST include this in wgsl to fix a metal stride bug
     pub _pad: [u32; 2],
+}
+
+impl GpuSprite {
+    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: mem::size_of::<GpuSprite>() as wgpu::BufferAddress,
+            // this is the magic that gives you instance buffers
+            step_mode: wgpu::VertexStepMode::Instance,
+            // TODO use offset_of when const macro is stabilized
+            attributes: &[
+                // position
+                wgpu::VertexAttribute {
+                    offset: 0,//offset!(position),
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                // size
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                // rotation
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32,
+                },
+                // color
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                    shader_location: 3,
+                    format: wgpu::VertexFormat::Uint32,
+                },
+            ],
+        }
+    }
 }
 
 impl SpritePainter {
@@ -41,40 +75,13 @@ impl SpritePainter {
         });
 
         let local_size = MAX_SPRITES * mem::size_of::<GpuSprite>();
-        let local_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: local_size as _,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::VERTEX,
             mapped_at_creation: false,
         });
 
-        let local_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(local_size as _),
-                    },
-                    count: None,
-                }],
-                label: None,
-            });
-
-        let local_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &local_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &local_buffer,
-                    offset: 0,
-                    size: wgpu::BufferSize::new(local_size as _),
-                }),
-            }],
-            label: None,
-        });
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -102,7 +109,6 @@ impl SpritePainter {
             label: None,
             bind_group_layouts: &[
                 global_bind_group_layout,
-                &local_bind_group_layout,
                 &texture_bind_group_layout,
             ],
             push_constant_ranges: &[],
@@ -114,7 +120,7 @@ impl SpritePainter {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[GpuSprite::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -132,8 +138,7 @@ impl SpritePainter {
         });
 
         SpritePainter {
-            local_buffer,
-            local_group,
+            instance_buffer,
             render_pipeline,
             texture_bind_group_layout,
         }
@@ -147,7 +152,7 @@ impl SpritePainter {
         sprites: &[GpuSprite],
     ) -> CommandBuffer {
         let GraphicsContext { queue, device, .. } = ctx;
-        queue.write_buffer(&self.local_buffer, 0, bytemuck::cast_slice(sprites));
+        queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(sprites));
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
@@ -165,8 +170,9 @@ impl SpritePainter {
             render_pass.set_pipeline(&self.render_pipeline);
 
             render_pass.set_bind_group(0, &ctx.global.global_group, &[]);
-            render_pass.set_bind_group(1, &self.local_group, &[]);
-            render_pass.set_bind_group(2, &sprite_texture.bind_group, &[]);
+            render_pass.set_bind_group(1, &sprite_texture.bind_group, &[]);
+
+            render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
             render_pass.draw(0..4 as u32, 0..sprites.len() as u32);
         }
 
