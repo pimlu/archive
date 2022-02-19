@@ -13,6 +13,7 @@ pub struct SpritePainter {
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
+// FIXME shader compile takes too long
 const MAX_SPRITES: usize = 512;
 // 256 bit minimum alignment imposed by nvidia or something. there is also
 // min_uniform_buffer_offset_alignment which basically means the GPU could

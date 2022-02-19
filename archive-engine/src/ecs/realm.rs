@@ -1,8 +1,12 @@
 use super::*;
+use crate::*;
 
 use bimap::BiBTreeMap;
 
 use hecs::*;
+
+// 1 / 60
+pub const TICK_RATE: Num = mk_num!(0.016666666666666666);
 
 #[derive(Default)]
 pub struct Realm {

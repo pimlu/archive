@@ -13,6 +13,15 @@ pub struct Snapshot {
     pub(super) ent_map: BTreeMap<ReplKey, Entity>,
 }
 
+impl Default for Snapshot {
+    fn default() -> Self {
+        Self {
+            world: World::new(),
+            ent_map: Default::default(),
+        }
+    }
+}
+
 impl Snapshot {
     pub fn new() -> Self {
         Snapshot {

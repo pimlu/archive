@@ -10,12 +10,12 @@ use web_sys::{
     RtcPeerConnection, RtcSdpType, RtcSessionDescriptionInit,
 };
 
-use archive_engine::session::*;
+use archive_engine::rtc::*;
 use archive_engine::SharedFuture;
 
 use wasm_bindgen::prelude::*;
 
-fn fmt_jserr<T>(err: impl Display) -> Result<T, JsValue> {
+pub fn fmt_jserr<T>(err: impl Display) -> Result<T, JsValue> {
     Err(JsValue::from(format!("{err}")))
 }
 
@@ -124,7 +124,7 @@ impl WasmServerHandle {
     }
 }
 
-impl RtcServerHandle for WasmServerHandle {
+impl RtcServerDescriptor for WasmServerHandle {
     type Session = WasmClientSession;
 
     type Error = JsValue;

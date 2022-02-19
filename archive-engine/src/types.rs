@@ -44,11 +44,18 @@ impl V2 {
 }
 
 #[macro_export]
+macro_rules! mk_num {
+    ($n:expr) => {
+        fixed::Wrapping(fixed_macro::fixed!($n: I12F20))
+    };
+}
+
+#[macro_export]
 macro_rules! mk_v2 {
     ($x:expr, $y:expr) => {
         V2 {
-            x: fixed::Wrapping(fixed_macro::fixed!($x: I12F20)),
-            y: fixed::Wrapping(fixed_macro::fixed!($y: I12F20)),
+            x: mk_num!($x),
+            y: mk_num!($y),
         }
     };
 }

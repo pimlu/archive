@@ -1,5 +1,6 @@
 use crate::*;
 
+use archive_engine::*;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -15,7 +16,14 @@ pub struct GraphicsContext {
     pub multisampled_fb: Option<wgpu::TextureView>,
 }
 
-pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce() {
+// this function is mainly playing along with the winit event loop and
+// setting up wgpu constructs. But it also passes through client_rx which
+// is critical for setting up the client e.g. with connections to the server
+pub async fn run_init(
+    event_loop: EventLoop<()>,
+    window: Window,
+    client_rx: rtc::ClientReceiver,
+) -> impl FnOnce() {
     let size = window.inner_size();
     let instance = wgpu::Instance::new(wgpu::Backends::all());
     let surface = unsafe { instance.create_surface(&window) };
@@ -69,11 +77,14 @@ pub async fn run_init(event_loop: EventLoop<()>, window: Window) -> impl FnOnce(
         multisampled_fb,
     };
 
-    let mut app = App::init(&ctx);
+    // TODO I don't like this, we should have a separate function that returns ctx,
+    // pass that into App::init, and then another function which does the event loop
+    let mut app = App::init(&ctx, client_rx);
 
     // return a FnOnce so we can "escape" wasm-bindgen-futures and run this
-    // call which currently panics later. This is because wasm-bindgen-futures
-    // doesn't support panics
+    // call which panics later. (This is what generates the "shouldSuppress"
+    // error in App.tsx.) This is done because wasm-bindgen-futures doesn't
+    // support panics (the executor stops working after a panic)
     move || {
         event_loop.run(move |event, _, control_flow| {
             // Have the closure take ownership of the resources.

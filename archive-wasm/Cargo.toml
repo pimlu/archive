@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 archive-client = { path = "../archive-client", default-features = false, features = ["webgl"] }
 archive-engine = { path = "../archive-engine" }
 
+getrandom = { version = "0.2", features = ["js"] }
 futures = "0.3"
 wasm-bindgen = { version = "0.2.78", features = ["serde-serialize"] }
 console_log = "0.2.0"

@@ -1,9 +1,15 @@
 use std::ops::{Index, IndexMut};
 
+#[derive(Debug, Clone)]
 pub struct CircularBuf<T, const CAP: usize> {
     start: usize,
     len: usize,
     backing: [Option<T>; CAP],
+}
+impl<T, const CAP: usize> Default for CircularBuf<T, CAP> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T, const CAP: usize> Index<usize> for CircularBuf<T, CAP> {
@@ -79,6 +85,7 @@ impl<T, const CAP: usize> CircularBuf<T, CAP> {
 // infers absolute indices from indices modulo VCAP.
 // stores the last CAP entires in a CircularBuf.
 // assumes CAP <<< VCAP.
+#[derive(Debug, Clone, Default)]
 pub struct RollingBuf<T, const CAP: usize, const VCAP: usize> {
     backing: CircularBuf<Option<T>, CAP>,
 }
@@ -89,9 +96,11 @@ pub enum RollingBufError {
 }
 
 impl<T, const CAP: usize, const VCAP: usize> RollingBuf<T, CAP, VCAP> {
-
     const fn check_caps() {
-        assert!(CAP * 8 <= VCAP, "VCAP is too small to detect rollovers correctly");
+        assert!(
+            CAP * 8 <= VCAP,
+            "VCAP is too small to detect rollovers correctly"
+        );
     }
     fn calc_true_index(&self, rolling_index: usize) -> Result<usize, RollingBufError> {
         if rolling_index >= VCAP {

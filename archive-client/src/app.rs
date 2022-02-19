@@ -1,8 +1,11 @@
+use std::sync::mpsc;
+
 use crate::*;
-use archive_engine::random;
+use archive_engine::*;
 
 /// Example struct holds references to wgpu resources and frame persistent data
 pub struct App {
+    // rendering, window related stuff
     frame_counter: FrameCounter,
     sprite_painter: sprite::SpritePainter,
     sprite_texture: sprite::SpriteTexture,
@@ -10,10 +13,13 @@ pub struct App {
     text_painter: text::TextPainter,
     inconsolata: wgpu_glyph::GlyphBrush<()>,
     last_fps: f64,
+
+    client: rtc::Client,
+    client_rx: rtc::ClientReceiver,
 }
 
 impl App {
-    pub fn init(ctx: &GraphicsContext) -> Self {
+    pub fn init(ctx: &GraphicsContext, client_rx: rtc::ClientReceiver) -> Self {
         let GraphicsContext {
             device,
             queue,
@@ -56,6 +62,8 @@ impl App {
             text_painter,
             inconsolata,
             last_fps: 0.,
+            client: rtc::Client::new(),
+            client_rx,
         }
     }
 
@@ -79,6 +87,16 @@ impl App {
         if let Some(fps) = fps_opt {
             self.last_fps = fps;
         }
+
+        // update the client
+        loop {
+            match self.client_rx.try_recv() {
+                Ok(msg) => self.client.recv_from_app(msg),
+                Err(mpsc::TryRecvError::Empty) => break,
+                Err(mpsc::TryRecvError::Disconnected) => panic!("client_rx disconnected"),
+            }
+        }
+
         // update the viewport
         let global_data = Global {
             mvp: cgmath::ortho(
