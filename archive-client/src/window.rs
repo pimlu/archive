@@ -22,7 +22,7 @@ pub struct GraphicsContext {
 pub async fn run_init(
     event_loop: EventLoop<()>,
     window: Window,
-    client_rx: rtc::ClientReceiver,
+    client_rx: client::ClientReceiver,
 ) -> impl FnOnce() {
     let size = window.inner_size();
     let instance = wgpu::Instance::new(wgpu::Backends::all());

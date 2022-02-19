@@ -1,5 +1,6 @@
 mod app;
 mod assets;
+pub mod client;
 mod frame_counter;
 mod global_buffer;
 pub mod launch_config;

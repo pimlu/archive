@@ -14,12 +14,12 @@ pub struct App {
     inconsolata: wgpu_glyph::GlyphBrush<()>,
     last_fps: f64,
 
-    client: rtc::Client,
-    client_rx: rtc::ClientReceiver,
+    client: client::Client,
+    client_rx: client::ClientReceiver,
 }
 
 impl App {
-    pub fn init(ctx: &GraphicsContext, client_rx: rtc::ClientReceiver) -> Self {
+    pub fn init(ctx: &GraphicsContext, client_rx: client::ClientReceiver) -> Self {
         let GraphicsContext {
             device,
             queue,
@@ -62,7 +62,7 @@ impl App {
             text_painter,
             inconsolata,
             last_fps: 0.,
-            client: rtc::Client::new(),
+            client: client::Client::new(),
             client_rx,
         }
     }
@@ -96,6 +96,7 @@ impl App {
                 Err(mpsc::TryRecvError::Disconnected) => panic!("client_rx disconnected"),
             }
         }
+        self.client.frame(mk_num!(0));
 
         // update the viewport
         let global_data = Global {

@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc;
 
-use archive_client::{launch_config, run_init};
+use archive_client::*;
 use archive_engine::rtc::RtcServerDescriptor;
 use archive_engine::*;
 use js_sys::Reflect;
@@ -21,7 +21,7 @@ use wasm_bindgen::JsCast;
 
 #[wasm_bindgen]
 pub struct WasmClient {
-    tx: mpsc::Sender<rtc::ClientMessageFromApp>,
+    tx: mpsc::Sender<client::ClientMessageFromApp>,
 }
 
 #[wasm_bindgen(js_name=startClient)]
@@ -68,7 +68,7 @@ pub fn use_connection(
     connection: WasmConnection,
 ) -> Result<(), JsValue> {
     let boxed = Box::new(connection.session);
-    let msg = rtc::ClientMessageFromApp::Connected(boxed);
+    let msg = client::ClientMessageFromApp::Connected(boxed);
 
     wasm_client.tx.send(msg).or_else(fmt_jserr)
 }

@@ -99,14 +99,11 @@ pub async fn negotiate<'a>(client_offer: ClientOffer) -> Result<Negotiation> {
                         while result.is_ok() {
                             let timeout = tokio::time::sleep(Duration::from_secs(5));
                             tokio::pin!(timeout);
+                            let _ = timeout.as_mut().await;
 
-                            tokio::select! {
-                                _ = timeout.as_mut() =>{
-                                    let message = math_rand_alpha(15);
-                                    println!("Sending '{}'", message);
-                                    result = d2.send_text(message).await.map_err(Into::into);
-                                }
-                            };
+                            let message = math_rand_alpha(15);
+                            println!("Sending '{}'", message);
+                            result = d2.send(&bytes::Bytes::from(message)).await.map_err(Into::into);
                         }
                     })
                 })).await;

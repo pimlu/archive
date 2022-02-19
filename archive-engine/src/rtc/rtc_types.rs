@@ -1,6 +1,8 @@
+use std::sync::mpsc;
+
 use crate::*;
 
-use futures::{Sink, Stream};
+use futures::{AsyncRead, AsyncWrite, Sink, Stream};
 use serde::{Deserialize, Serialize};
 
 const SNAPSHOT_CAP: usize = 256;
@@ -24,13 +26,11 @@ pub struct ServerAnswer {
     pub sdp: String,
 }
 
-pub trait RawChannel: Stream<Item = Vec<u8>> + Sink<Vec<u8>> {}
-
-// FIXME bring this back
+// implemented as either a wrapper around:
+// 1. web_sys datachannel (in the browser)
+// 2. webrtc crate datachannel (in native)
 pub trait RtcClientSession {
-    // type Channel: RawChannel;
-    // fn channels(&mut self) -> &mut [Self::Channel];
-    // fn reliability(&self) -> &[bool];
+    fn try_recv(&self) -> Result<Vec<u8>, mpsc::TryRecvError>;
 }
 
 pub type BoxRtcClientSession = Box<dyn RtcClientSession>;

@@ -1,13 +1,16 @@
 use std::fmt::Display;
+use std::sync::mpsc;
 
+use js_sys::ArrayBuffer;
 use js_sys::Reflect;
+use js_sys::Uint8Array;
 use log::info;
 
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
     MessageEvent, Request, RequestInit, RequestMode, Response, RtcConfiguration, RtcDataChannel,
-    RtcPeerConnection, RtcSdpType, RtcSessionDescriptionInit,
+    RtcDataChannelType, RtcPeerConnection, RtcSdpType, RtcSessionDescriptionInit,
 };
 
 use archive_engine::rtc::*;
@@ -22,8 +25,13 @@ pub fn fmt_jserr<T>(err: impl Display) -> Result<T, JsValue> {
 pub struct WasmClientSession {
     pub peer_connection: RtcPeerConnection,
     pub data_channel: RtcDataChannel,
+    pub rx: mpsc::Receiver<Vec<u8>>,
 }
-impl RtcClientSession for WasmClientSession {}
+impl RtcClientSession for WasmClientSession {
+    fn try_recv(&self) -> Result<Vec<u8>, mpsc::TryRecvError> {
+        self.rx.try_recv()
+    }
+}
 
 pub struct WasmServerHandle {
     pub hostname: String,
@@ -72,20 +80,27 @@ impl WasmServerHandle {
 
         let dc = pc.create_data_channel("foo");
 
+        dc.set_binary_type(RtcDataChannelType::Arraybuffer);
+
         let onclose_callback = Closure::wrap(Box::new(|| info!("closed")) as Box<dyn FnMut()>);
         let onopen_callback = Closure::wrap(Box::new(|| info!("open")) as Box<dyn FnMut()>);
 
+        let (tx, rx) = mpsc::channel::<Vec<u8>>();
+
         // let dc_clone = dc.clone();
-        let onmessage_callback =
-            Closure::wrap(
-                Box::new(move |ev: MessageEvent| match ev.data().as_string() {
-                    Some(message) => {
-                        info!("message: {message}");
-                        // dc_clone.send_with_str("Pong from pc1.dc!").unwrap();
-                    }
-                    None => {}
-                }) as Box<dyn FnMut(MessageEvent)>,
-            );
+        let onmessage_callback = Closure::wrap(Box::new(move |ev: MessageEvent| {
+            let buffer = ev.data().dyn_into::<ArrayBuffer>();
+            match buffer {
+                Ok(buffer) => {
+                    // convert it back into a jsvalue, we could have kept this
+                    // originally but I'd rather make sure it's an arraybuffer
+                    let vec = Uint8Array::new(&JsValue::from(buffer)).to_vec();
+                    tx.send(vec);
+                    // dc_clone.send_with_str("Pong from pc1.dc!").unwrap();
+                }
+                Err(e) => panic!("bad recv {:?}", e),
+            }
+        }) as Box<dyn FnMut(MessageEvent)>);
         dc.set_onclose(Some(onclose_callback.as_ref().unchecked_ref()));
         dc.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
         dc.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
@@ -119,6 +134,7 @@ impl WasmServerHandle {
         let session = WasmClientSession {
             peer_connection: pc,
             data_channel: dc,
+            rx,
         };
         Ok(session)
     }
