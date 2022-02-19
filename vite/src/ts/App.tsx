@@ -36,5 +36,6 @@ export default function App() {
   }, [client]);
  return <div>
    <button type="button" class="play-btn" disabled={!client} onClick={onClickPlay}>Play</button>
+   <canvas id="game" />
    </div>;
 }

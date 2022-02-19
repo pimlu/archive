@@ -1,6 +1,7 @@
 mod wasm_random;
 mod wasm_rtc;
 use wasm_rtc::*;
+use web_sys::HtmlCanvasElement;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,9 +14,10 @@ use js_sys::Reflect;
 use wasm_random::WasmRandomBuilder;
 use wasm_rtc::WasmClientSession;
 use winit::event_loop::EventLoop;
-use winit::platform::web::WindowExtWebSys;
+use winit::platform::web::{WindowBuilderExtWebSys, WindowExtWebSys};
 
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 
 #[wasm_bindgen]
 pub struct WasmClient {
@@ -27,21 +29,20 @@ pub async fn start_client() -> Result<JsValue, JsValue> {
     random::register(WasmRandomBuilder {});
     launch_config::register(launch_config::LaunchConfig { sample_count: 4 });
 
+    let canvas: HtmlCanvasElement = web_sys::window()
+        .and_then(|win| win.document())
+        .and_then(|doc| doc.get_element_by_id("game"))
+        .and_then(|elem| elem.dyn_into().ok())
+        .expect("could not get canvas");
+
     let event_loop = EventLoop::new();
-    let window = winit::window::Window::new(&event_loop).unwrap();
+
+    let builder = winit::window::WindowBuilder::new();
+    let builder = builder.with_canvas(Some(canvas));
+    let window = builder.build(&event_loop).unwrap();
 
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     console_log::init().expect("could not initialize logger");
-
-    // On wasm, append the canvas to the document body
-    web_sys::window()
-        .and_then(|win| win.document())
-        .and_then(|doc| doc.body())
-        .and_then(|body| {
-            body.append_child(&web_sys::Element::from(window.canvas()))
-                .ok()
-        })
-        .expect("couldn't append canvas to document body");
 
     let (tx, rx) = mpsc::channel();
     let run = run_init(event_loop, window, rx).await;
