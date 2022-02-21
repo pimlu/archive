@@ -3,6 +3,7 @@ use std::pin::Pin;
 use derive_more::{Add, AddAssign, Display, From, Into, Mul, MulAssign, Neg, Sub, SubAssign};
 use fixed::{traits::ToFixed, types::I12F20};
 use futures::Future;
+use serde::{Deserialize, Serialize};
 
 // [-2048, 2048) range, ~1M fractional resolution
 // wrapping because we always want to be able to construct a 2's complement difference
@@ -59,17 +60,32 @@ macro_rules! mk_v2 {
         }
     };
 }
+pub mod conversions {
+    use super::*;
 
-// impl std::ops::Mul<Num> for V2 {
-//     type Output = V2;
-
-//     fn mul(self, scalar: Num) -> Self {
-//         Self {
-//             x: self.x * scalar,
-//             y: self.y * scalar,
-//         }
-//     }
-// }
+    pub const fn num_to_imicros(num: Num) -> i64 {
+        let bits = num.0.to_bits() as i64;
+        let numer = 1_000_000;
+        let denom = 2i64.pow(Num::FRAC_NBITS);
+        (bits * numer) / denom
+    }
+    pub const fn num_to_umicros(num: Num) -> Option<u64> {
+        let imicros = num_to_imicros(num);
+        // try_into is not const stabilized
+        if imicros >= 0 {
+            Some(imicros as u64)
+        } else {
+            None
+        }
+    }
+    pub const fn num_to_umicros_cast(num: Num) -> u64 {
+        // unwrap is not const stabilized
+        match num_to_umicros(num) {
+            Some(x) => x,
+            None => panic!("negative micros"),
+        }
+    }
+}
 
 pub type Zed = std::num::Wrapping<i8>;
 pub const fn mk_zed(zed: i8) -> Zed {
@@ -138,4 +154,13 @@ pub(crate) use derive_components;
 pub(crate) use derive_delta;
 pub(crate) use derive_math_components;
 
-use serde::{Deserialize, Serialize};
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn num_micros() {
+        let num = mk_num!(0.5);
+        assert_eq!(conversions::num_to_umicros(num), Some(500_000));
+    }
+}

@@ -8,14 +8,14 @@ use archive_engine::*;
 pub struct Client {
     realm: ecs::Realm,
     snapshots: rtc::SnapshotBuf<ecs::Snapshot>,
-    session: Option<rtc::BoxRtcClientSession>,
+    session: Option<rtc::BoxedRtcSession>,
 }
 
 // messages received "externally" to the client
 pub enum ClientMessageFromApp {
     // TODO change this to be a server descriptor?
     // better long term but harder to report errors
-    Connected(rtc::BoxRtcClientSession),
+    Connected(rtc::BoxedRtcSession),
 }
 
 pub type ClientReceiver = mpsc::Receiver<ClientMessageFromApp>;

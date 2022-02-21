@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::*;
 use crate::*;
 
@@ -7,15 +9,17 @@ use hecs::*;
 
 // 1 / 60
 pub const TICK_RATE: Num = mk_num!(0.016666666666666666);
+pub const TICK_DURATION: Duration =
+    Duration::from_micros(conversions::num_to_umicros_cast(TICK_RATE));
 
 #[derive(Default)]
 pub struct Realm {
     // only ecs can access world because it has invariants to uphold
     pub(super) world: World,
-    pub(crate) input_query: PreparedQuery<InputQ>,
-    pub(crate) movement_query: PreparedQuery<MovementQ>,
-    pub(crate) health_query: PreparedQuery<HealthQ>,
-    pub(crate) death_query: PreparedQuery<DeadQ>,
+    // pub(crate) input_query: PreparedQuery<InputQ>,
+    // pub(crate) movement_query: PreparedQuery<MovementQ>,
+    // pub(crate) health_query: PreparedQuery<HealthQ>,
+    // pub(crate) death_query: PreparedQuery<DeadQ>,
     pub tick: u64,
 
     pub(crate) repl_token_pool: ReplPool,
@@ -30,7 +34,7 @@ impl Realm {
         input_system(self);
         movement_system(self);
         health_system(self);
-        death_system(self);
+        // death_system(self);
     }
     // TODO add the player and make this relative
     pub(super) fn calc_priority_inc(&mut self, ent: Entity) -> Priority {
@@ -72,5 +76,8 @@ impl Realm {
     }
     pub fn get_mut<Q: Query>(&mut self, ent: Entity) -> Option<QueryItem<Q>> {
         utils::world_get_mut::<Q>(&mut self.world, ent)
+    }
+    pub fn query_mut<Q: Query>(&mut self) -> QueryMut<Q> {
+        self.world.query_mut()
     }
 }

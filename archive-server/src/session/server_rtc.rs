@@ -1,3 +1,5 @@
+use super::*;
+
 use anyhow::{bail, Result};
 use archive_engine::rtc::{ClientOffer, ServerAnswer};
 use log::debug;
@@ -17,8 +19,8 @@ use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 use webrtc::peer_connection::{math_rand_alpha, RTCPeerConnection};
 
 pub struct Negotiation {
-    pub server_answer: ServerAnswer,
-    pub peer_connection: Arc<RTCPeerConnection>,
+    pub sdp: String,
+    pub session: NativeRtcSession,
     pub done_rx: tokio::sync::mpsc::Receiver<()>,
 }
 
@@ -144,14 +146,16 @@ pub async fn negotiate<'a>(client_offer: ClientOffer) -> Result<Negotiation> {
 
     // Output the answer in base64 so we can paste it in browser
     if let Some(local_desc) = peer_connection.local_description().await {
-        //let json_str = serde_json::to_string(&local_desc)?;
-        let server_answer = ServerAnswer {
-            sdp: local_desc.sdp,
+        let session = NativeRtcSession {
+            peer_connection,
+            attempted_close: false.into(),
         };
+
+        //let json_str = serde_json::to_string(&local_desc)?;
         debug!("succeeded negotiation");
         Ok(Negotiation {
-            server_answer,
-            peer_connection,
+            sdp: local_desc.sdp,
+            session,
             done_rx,
         })
     } else {

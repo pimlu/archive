@@ -205,8 +205,8 @@ dependencies = [
  "archive-client",
  "archive-engine",
  "env_logger",
- "pollster",
  "rand",
+ "tokio",
  "winit",
 ]
 
@@ -220,8 +220,12 @@ dependencies = [
  "bytes",
  "chrono",
  "clap",
+ "derive_more",
  "env_logger",
+ "fixed",
+ "fixed-macro",
  "futures",
+ "hecs",
  "lazy_static",
  "log",
  "serde",
@@ -2458,12 +2462,6 @@ dependencies = [
  "deflate",
  "miniz_oxide",
 ]
-
-[[package]]
-name = "pollster"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb20dcc30536a1508e75d47dd0e399bb2fe7354dcf35cda9127f2bf1ed92e30e"
 
 [[package]]
 name = "polyval"

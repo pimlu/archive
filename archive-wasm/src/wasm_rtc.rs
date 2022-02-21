@@ -27,7 +27,17 @@ pub struct WasmClientSession {
     pub data_channel: RtcDataChannel,
     pub rx: mpsc::Receiver<Vec<u8>>,
 }
-impl RtcClientSession for WasmClientSession {
+impl RtcSession for WasmClientSession {
+    fn get_state(&self) -> SessionState {
+        todo!()
+    }
+    fn close(&self) {
+        todo!()
+    }
+
+    fn send(&self, msg: Vec<u8>) -> bool {
+        todo!()
+    }
     fn try_recv(&self) -> Result<Vec<u8>, mpsc::TryRecvError> {
         self.rx.try_recv()
     }
@@ -116,7 +126,10 @@ impl WasmServerHandle {
             .as_string()
             .ok_or(JsValue::from("bad sdp"))?;
 
-        let client_offer = ClientOffer { sdp: offer_sdp };
+        let client_offer = ClientOffer {
+            ticket: 0,
+            sdp: offer_sdp,
+        };
 
         let mut offer_obj = RtcSessionDescriptionInit::new(RtcSdpType::Offer);
         offer_obj.sdp(&client_offer.sdp);

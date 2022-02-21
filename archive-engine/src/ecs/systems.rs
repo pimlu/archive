@@ -28,12 +28,7 @@ derive_math_components! {
 pub type MovementQ = (&'static mut Position, &'static Velocity);
 
 pub fn movement_system(realm: &mut Realm) {
-    let Realm {
-        world,
-        movement_query,
-        ..
-    } = realm;
-    for (_id, (pos, vel)) in movement_query.query_mut(world) {
+    for (_id, (pos, vel)) in realm.query_mut::<MovementQ>() {
         pos.xy += vel.xy;
     }
 }
@@ -54,10 +49,7 @@ derive_components! {
 pub type InputQ = (&'static mut Velocity, &'static mut Rotation, &'static Input);
 
 pub fn input_system(realm: &mut Realm) {
-    let Realm {
-        world, input_query, ..
-    } = realm;
-    for (_id, (vel, rot, input)) in input_query.query_mut(world) {
+    for (_id, (vel, rot, input)) in realm.query_mut::<InputQ>() {
         vel.xy += input.movement;
         rot.rad = input.aim;
     }
@@ -84,32 +76,27 @@ impl Health {
 pub type HealthQ = &'static Health;
 
 pub fn health_system(realm: &mut Realm) {
-    let Realm {
-        world,
-        health_query,
-        ..
-    } = realm;
     let mut to_despawn = Vec::new();
-    for (id, health) in health_query.query_mut(world) {
+    for (id, health) in realm.query_mut::<HealthQ>() {
         if health.value.0 == 0 {
             to_despawn.push(id);
         }
     }
     for id in to_despawn {
-        world.insert_one(id, Dead {}).unwrap();
+        realm.world.despawn(id).unwrap();
     }
 }
 
-pub type DeadQ = &'static Dead;
-pub fn death_system(realm: &mut Realm) {
-    let Realm {
-        world, death_query, ..
-    } = realm;
-    let mut to_remove = Vec::new();
-    for (id, _) in death_query.query_mut(world) {
-        to_remove.push(id);
-    }
-    for id in to_remove {
-        world.despawn(id).unwrap();
-    }
-}
+// pub type DeadQ = &'static Dead;
+// pub fn death_system(realm: &mut Realm) {
+//     let Realm {
+//         world, death_query, ..
+//     } = realm;
+//     let mut to_remove = Vec::new();
+//     for (id, _) in death_query.query_mut(world) {
+//         to_remove.push(id);
+//     }
+//     for id in to_remove {
+//         world.despawn(id).unwrap();
+//     }
+// }
