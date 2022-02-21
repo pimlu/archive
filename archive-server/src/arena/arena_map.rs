@@ -4,7 +4,7 @@ use super::*;
 use archive_engine::*;
 
 use anyhow::{bail, Result};
-use log::info;
+use log::*;
 use tokio::sync::RwLock;
 
 #[derive(Default)]
@@ -34,6 +34,11 @@ impl ArenaMap {
                 if let Some(arena_strong) = arena_weak.upgrade() {
                     let mut arena = arena_strong.write().await;
                     arena.tick();
+
+                    // use tokio/async when sending because https://github.com/quinn-rs/quinn/issues/867
+                    // FIXME this introduces error into the tickrate
+                    // calculate a duration for sleep instead
+                    arena.tick_async().await;
                 } else {
                     break;
                 }
@@ -53,25 +58,28 @@ impl ArenaMap {
 pub async fn process_client_offer(
     client_offer: &rtc::ClientOffer,
     arena_map: ArenaMapLock,
-) -> Result<rtc::ClientId> {
+) -> Result<(rtc::ClientId, ArenaLock)> {
     // TODO process their ticket using diesel
     let arena_ukey: rtc::ArenaUkey = client_offer.ticket;
 
     // first lock arena_map briefly to get access to the corresponding arena
-    let arena = {
+    let arena_lock = {
         let mut arena_map = arena_map.write().await;
         arena_map.get_or_insert_default(arena_ukey)
     };
 
-    // then lock the arena itself to add the client
-    let mut arena = arena.write().await;
+    let client_id = {
+        // then lock the arena itself to add the client
+        let mut arena = arena_lock.write().await;
 
-    if arena.clients.len() == rtc::ClientId::MAX as usize {
-        bail!("max clients reached");
-    }
+        // TODO actual tickets/client_ids
+        if arena.clients.len() == rtc::ClientId::MAX as usize {
+            bail!("max clients reached");
+        }
+        let client_id = arena.clients.len() as rtc::ClientId;
+        arena.alloc_client(client_id);
+        client_id
+    };
 
-    let client_id = arena.clients.len();
-    arena.clients.push(None);
-
-    Ok(client_id as _)
+    Ok((client_id as _, arena_lock))
 }

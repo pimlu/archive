@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{collections::BTreeMap, time::Duration};
 
 use super::*;
 use crate::*;
@@ -24,6 +24,7 @@ pub struct Realm {
 
     pub(crate) repl_token_pool: ReplPool,
     pub(crate) ent_map: BiBTreeMap<ReplToken, Entity>,
+    pub(crate) player_map: BTreeMap<rtc::ClientId, Entity>,
 }
 
 impl Realm {

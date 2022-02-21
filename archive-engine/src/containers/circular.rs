@@ -85,14 +85,19 @@ impl<T, const CAP: usize> CircularBuf<T, CAP> {
 // infers absolute indices from indices modulo VCAP.
 // stores the last CAP entires in a CircularBuf.
 // assumes CAP <<< VCAP.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct RollingBuf<T, const CAP: usize, const VCAP: usize> {
-    backing: CircularBuf<Option<T>, CAP>,
+    backing: Box<CircularBuf<Option<T>, CAP>>,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RollingBufError {
     TooOld,
     OutOfBounds,
+}
+impl<T, const CAP: usize, const VCAP: usize> Default for RollingBuf<T, CAP, VCAP> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T, const CAP: usize, const VCAP: usize> RollingBuf<T, CAP, VCAP> {
@@ -136,7 +141,7 @@ impl<T, const CAP: usize, const VCAP: usize> RollingBuf<T, CAP, VCAP> {
     pub fn new() -> Self {
         Self::check_caps();
         RollingBuf {
-            backing: CircularBuf::new(),
+            backing: Box::new(CircularBuf::new()),
         }
     }
     pub fn add(&mut self, rolling_index: usize, value: T) -> Result<usize, RollingBufError> {

@@ -1,5 +1,5 @@
 mod filters;
-mod handler;
+mod req_handlers;
 
 pub use filters::*;
-pub use handler::*;
+pub use req_handlers::*;

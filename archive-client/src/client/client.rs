@@ -35,7 +35,7 @@ impl Client {
             return;
         }
         loop {
-            match self.session.as_ref().unwrap().try_recv() {
+            match self.session.as_mut().unwrap().try_recv() {
                 Ok(msg) => {
                     info!("received: {:?}", msg);
                 }

@@ -37,7 +37,7 @@ derive_components! {
     pub struct Camera {}
 
     pub struct Player {
-        _id: u8,
+        id: rtc::ClientId,
     }
     // replicated player inputs
     pub struct Input {

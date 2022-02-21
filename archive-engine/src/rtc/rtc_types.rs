@@ -2,7 +2,6 @@ use std::sync::mpsc;
 
 use crate::*;
 
-use futures::{AsyncRead, AsyncWrite, Sink, Stream};
 use serde::{Deserialize, Serialize};
 
 const SNAPSHOT_CAP: usize = 256;
@@ -26,6 +25,7 @@ pub struct ServerAnswer {
     pub sdp: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SessionState {
     Connecting,
     Connected,
@@ -38,8 +38,8 @@ pub enum SessionState {
 pub trait RtcSession {
     fn get_state(&self) -> SessionState;
     fn close(&self);
-    fn send(&self, msg: Vec<u8>) -> bool;
-    fn try_recv(&self) -> Result<Vec<u8>, mpsc::TryRecvError>;
+    fn send(&self, msg: Vec<u8>) -> SharedFuture<bool>;
+    fn try_recv(&mut self) -> Result<Vec<u8>, mpsc::TryRecvError>;
 }
 
 pub type BoxedRtcSession = Box<dyn RtcSession>;

@@ -8,6 +8,7 @@ use log::info;
 
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
+use web_sys::RtcDataChannelInit;
 use web_sys::{
     MessageEvent, Request, RequestInit, RequestMode, Response, RtcConfiguration, RtcDataChannel,
     RtcDataChannelType, RtcPeerConnection, RtcSdpType, RtcSessionDescriptionInit,
@@ -35,10 +36,10 @@ impl RtcSession for WasmClientSession {
         todo!()
     }
 
-    fn send(&self, msg: Vec<u8>) -> bool {
+    fn send(&self, msg: Vec<u8>) -> SharedFuture<bool> {
         todo!()
     }
-    fn try_recv(&self) -> Result<Vec<u8>, mpsc::TryRecvError> {
+    fn try_recv(&mut self) -> Result<Vec<u8>, mpsc::TryRecvError> {
         self.rx.try_recv()
     }
 }
@@ -88,7 +89,10 @@ impl WasmServerHandle {
         config.ice_servers(&ice_servers);
         let pc = RtcPeerConnection::new_with_configuration(&config)?;
 
-        let dc = pc.create_data_channel("foo");
+        let mut dict = RtcDataChannelInit::new();
+        dict.ordered(false).max_retransmits(0);
+
+        let dc = pc.create_data_channel_with_data_channel_dict("udp", &dict);
 
         dc.set_binary_type(RtcDataChannelType::Arraybuffer);
 
