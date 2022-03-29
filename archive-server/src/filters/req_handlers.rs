@@ -1,17 +1,20 @@
-use anyhow::Result;
+use std::collections::HashMap;
+
+use anyhow::{bail, Result};
 use archive_engine::*;
+use futures::{FutureExt, StreamExt};
 use log::*;
 use warp::reject::Reject;
 
 use crate::*;
 
-async fn rtc_signal_anyhow(
+async fn handle_rtc_signal_anyhow(
     client_offer: rtc::ClientOffer,
     arena_map: arena::ArenaMapLock,
 ) -> Result<impl warp::Reply> {
     let (client_id, arena_lock) =
-        arena::process_client_offer(&client_offer, arena_map.clone()).await?;
-    debug!("attempting negotiation");
+        arena::process_client_ticket(client_offer.ticket, arena_map.clone()).await?;
+    debug!("attempting rtc negotiation");
 
     let peer_connection = session::create_peer_connection().await?;
 
@@ -25,7 +28,7 @@ async fn rtc_signal_anyhow(
         match session::NativeRtcSession::new(peer_connection).await {
             Ok(session) => {
                 let mut arena = arena_lock.write().await;
-                if let Err(e) = arena.process_client_session(client_id, session) {
+                if let Err(e) = arena.process_client_session(client_id, session.into()) {
                     error!("failed to process client session: {e}");
                 }
             }
@@ -48,11 +51,39 @@ fn error_to_reject(error: anyhow::Error) -> warp::Rejection {
     warp::reject::custom(AnyhowReject { error })
 }
 
-pub async fn rtc_signal(
+pub async fn handle_rtc_signal(
     client_offer: rtc::ClientOffer,
     arena_map: arena::ArenaMapLock,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    rtc_signal_anyhow(client_offer, arena_map)
+    handle_rtc_signal_anyhow(client_offer, arena_map)
         .await
         .map_err(error_to_reject)
+}
+
+async fn handle_ws_anyhow(
+    p: HashMap<String, String>,
+    ws: warp::ws::Ws,
+) -> Result<impl warp::Reply> {
+    let ticket = p.get("ticket");
+    if ticket.is_none() {
+        bail!("no ticket");
+    }
+    // And then our closure will be called when it completes...
+    Ok(ws.on_upgrade(|websocket| {
+        // Just echo all messages back...
+        let (tx, rx) = websocket.split();
+
+        rx.forward(tx).map(|result| {
+            if let Err(e) = result {
+                eprintln!("websocket error: {:?}", e);
+            }
+        })
+    }))
+}
+
+pub async fn handle_ws(
+    p: HashMap<String, String>,
+    ws: warp::ws::Ws,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    handle_ws_anyhow(p, ws).await.map_err(error_to_reject)
 }

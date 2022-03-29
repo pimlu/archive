@@ -30,7 +30,7 @@ impl Client {
             Connected(session) => self.session = Some(session),
         }
     }
-    pub fn frame(&mut self, dt: Num) {
+    pub fn frame(&mut self, _dt: Num) {
         if self.session.is_none() {
             return;
         }

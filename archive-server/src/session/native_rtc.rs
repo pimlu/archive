@@ -1,4 +1,4 @@
-use archive_engine::*;
+use archive_engine::{rtc::RtcSession, *};
 
 use anyhow::{bail, Context, Result};
 use futures::Future;
@@ -19,13 +19,15 @@ use webrtc::peer_connection::RTCPeerConnection;
 
 use bytes::Bytes;
 
+use super::map_try_recv_to_std;
+
 // FIXME add logic to boot old clients when a double handshake happens
 // either that, or rate limit it in warp instead
-const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
+pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(2);
 
 // Buffer up to a dozen messages from the client, using a bounded channel
 // because we don't trust them. Why a dozen? 12 is a cool number
-const MAX_MSG_BUF: usize = 12;
+pub const MAX_MSG_BUF: usize = 12;
 
 pub async fn create_peer_connection() -> Result<Arc<RTCPeerConnection>> {
     // Create a MediaEngine object to configure the supported codec
@@ -222,9 +224,9 @@ impl rtc::RtcSession for NativeRtcSession {
         // or at least know when I call it twice
         if self.attempted_close.swap(true, Ordering::Relaxed) {
             info!("already closed");
-            return;
+        } else {
+            let _ = self.done_tx.try_send(());
         }
-        let _ = self.done_tx.try_send(());
     }
 
     fn send(&self, msg: Vec<u8>) -> SharedFuture<bool> {
@@ -232,11 +234,6 @@ impl rtc::RtcSession for NativeRtcSession {
     }
 
     fn try_recv(&mut self) -> Result<Vec<u8>, std::sync::mpsc::TryRecvError> {
-        self.msg_rx.try_recv().map_err(|e| match e {
-            tokio::sync::mpsc::error::TryRecvError::Empty => std::sync::mpsc::TryRecvError::Empty,
-            tokio::sync::mpsc::error::TryRecvError::Disconnected => {
-                std::sync::mpsc::TryRecvError::Disconnected
-            }
-        })
+        self.msg_rx.try_recv().map_err(map_try_recv_to_std)
     }
 }

@@ -55,12 +55,12 @@ impl ArenaMap {
     }
 }
 
-pub async fn process_client_offer(
-    client_offer: &rtc::ClientOffer,
+pub async fn process_client_ticket(
+    arena_ticket: rtc::ArenaTicket,
     arena_map: ArenaMapLock,
 ) -> Result<(rtc::ClientId, ArenaLock)> {
     // TODO process their ticket using diesel
-    let arena_ukey: rtc::ArenaUkey = client_offer.ticket;
+    let arena_ukey: rtc::ArenaUkey = arena_ticket.arena_ukey;
 
     // first lock arena_map briefly to get access to the corresponding arena
     let arena_lock = {

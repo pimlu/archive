@@ -1,9 +1,11 @@
 mod native_random;
+mod tungstenite_client_rtc;
 
 use std::sync::mpsc;
 
-use archive_client::{launch_config, run_init};
-use archive_engine::random;
+use archive_client::*;
+use archive_engine::{rtc::RtcServerDescriptor, *};
+use log::error;
 use native_random::NativeRandomBuilder;
 
 #[tokio::main]
@@ -15,7 +17,21 @@ async fn main() {
     let window = winit::window::Window::new(&event_loop).unwrap();
 
     env_logger::init();
-    let (_tx, rx) = mpsc::channel();
+    let (tx, rx) = mpsc::channel();
+
+    let server_handle = tungstenite_client_rtc::TungsteniteServerHandle {
+        hostname: "ws://localhost:8080".into(),
+    };
+    match server_handle.rtc_connect().await {
+        Ok(session) => {
+            tx.send(client::ClientMessageFromApp::Connected(session))
+                .unwrap();
+        }
+        Err(e) => {
+            error!("failed to connect: {e}");
+        }
+    };
+
     let run = run_init(event_loop, window, rx).await;
     run();
 }

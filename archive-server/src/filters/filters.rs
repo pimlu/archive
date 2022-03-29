@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use super::*;
 use crate::*;
 
+use futures::{FutureExt, StreamExt};
 use warp::Filter;
 
 pub async fn _handle_rejection(
@@ -9,11 +12,7 @@ pub async fn _handle_rejection(
     Ok(warp::reply::json(&format!("{:?}", err)))
 }
 
-pub async fn warp_main() {
-    env_logger::init();
-
-    let arena_map = arena::ArenaMapLock::default();
-
+pub async fn warp_serve(arena_map: arena::ArenaMapLock) {
     let cors = warp::cors()
         .allow_any_origin()
         .allow_headers(vec![
@@ -34,11 +33,17 @@ pub async fn warp_main() {
         .and(warp::body::content_length_limit(1024 * 16))
         .and(warp::body::json())
         .and(add_map)
-        .and_then(rtc_signal)
+        .and_then(handle_rtc_signal)
         .recover(_handle_rejection)
         .with(cors);
 
-    warp::serve(signal).run(([127, 0, 0, 1], 3030)).await
+    let ws = warp::path("ws")
+        .and(warp::query::<HashMap<String, String>>())
+        // The `ws()` filter will prepare the Websocket handshake.
+        .and(warp::ws())
+        .and_then(handle_ws);
+
+    warp::serve(signal.or(ws)).run(([127, 0, 0, 1], 3030)).await
 }
 
 pub fn add_map_filter(

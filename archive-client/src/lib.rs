@@ -12,5 +12,5 @@ mod window;
 pub use app::*;
 use frame_counter::*;
 use global_buffer::*;
-use types::*;
+
 pub use window::*;

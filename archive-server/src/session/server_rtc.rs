@@ -1,5 +1,3 @@
-use super::*;
-
 use anyhow::{bail, Result};
 use archive_engine::*;
 use log::debug;
@@ -7,12 +5,6 @@ use std::sync::Arc;
 use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 use webrtc::peer_connection::RTCPeerConnection;
-
-pub struct Negotiation {
-    pub sdp: String,
-    pub session: NativeRtcSession,
-    pub done_rx: tokio::sync::mpsc::Receiver<()>,
-}
 
 // returns SDP string for warp to respond with.
 // also creates a tokio task that awaits a connection
