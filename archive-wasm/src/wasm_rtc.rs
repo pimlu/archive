@@ -14,7 +14,7 @@ use web_sys::{
     RtcDataChannelType, RtcPeerConnection, RtcSdpType, RtcSessionDescriptionInit,
 };
 
-use archive_engine::rtc::*;
+use archive_engine::rtc::{self, *};
 use archive_engine::SharedFuture;
 
 use wasm_bindgen::prelude::*;
@@ -131,7 +131,9 @@ impl WasmServerHandle {
             .ok_or(JsValue::from("bad sdp"))?;
 
         let client_offer = ClientOffer {
-            ticket: 0,
+            ticket: ArenaTicket {
+                arena_ukey: 0
+            },
             sdp: offer_sdp,
         };
 
@@ -158,11 +160,14 @@ impl WasmServerHandle {
 }
 
 impl RtcServerDescriptor for WasmServerHandle {
-    type Session = WasmClientSession;
-
     type Error = JsValue;
 
-    fn rtc_connect(&self) -> SharedFuture<Result<Self::Session, Self::Error>> {
-        Box::pin(Self::rtc_connect_raw(self.hostname.clone()))
+    fn rtc_connect(&self) -> SharedFuture<Result<rtc::BoxedRtcSession, Self::Error>> {
+        let hostname = self.hostname.clone();
+        Box::pin(async move {
+            let session = Self::rtc_connect_raw(hostname).await?;
+            let boxed: Box<dyn RtcSession> = Box::new(session);
+            Ok(boxed)
+        })
     }
 }

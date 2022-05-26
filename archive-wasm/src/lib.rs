@@ -8,7 +8,7 @@ use std::rc::Rc;
 use std::sync::mpsc;
 
 use archive_client::*;
-use archive_engine::rtc::RtcServerDescriptor;
+use archive_engine::rtc::{RtcServerDescriptor, BoxedRtcSession};
 use archive_engine::*;
 use js_sys::Reflect;
 use wasm_random::WasmRandomBuilder;
@@ -67,15 +67,15 @@ pub fn use_connection(
     wasm_client: &mut WasmClient,
     connection: WasmConnection,
 ) -> Result<(), JsValue> {
-    let boxed = Box::new(connection.session);
-    let msg = client::ClientMessageFromApp::Connected(boxed);
+    let WasmConnection { session } = connection;
+    let msg = client::ClientMessageFromApp::Connected(session);
 
     wasm_client.tx.send(msg).or_else(fmt_jserr)
 }
 
 #[wasm_bindgen]
 pub struct WasmConnection {
-    session: WasmClientSession,
+    session: BoxedRtcSession,
 }
 
 #[wasm_bindgen]
